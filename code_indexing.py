@@ -5,7 +5,7 @@ import ast
 import json
 import fnmatch
 from langchain_text_splitters import Language, RecursiveCharacterTextSplitter
-from code_chunking import CodeChunker
+from code_chunking import CodeChunker, EXT_TO_LANG
 from langchain_chroma import Chroma
 from langchain_openai import OpenAIEmbeddings
 from langchain_core.documents import Document
@@ -13,17 +13,6 @@ from langchain_core.documents import Document
 
 class CodeIndexer:
     """Index code files from a directory"""
-    
-    SUPPORTED_EXTENSIONS = {
-        '.py': 'python',
-        '.js': 'javascript',
-        '.ts': 'typescript',
-        '.java': 'java',
-        '.cpp': 'cpp',
-        '.c': 'c',
-        '.go': 'go',
-        '.rs': 'rust',
-    }
     
     def __init__(self, base_dir: str):
         self.base_dir = Path(base_dir)
@@ -62,7 +51,7 @@ class CodeIndexer:
     
     def should_process_file(self, filepath: Path) -> bool:
         """Return True iff this is a supported source file and not an excluded runtime file."""
-        if filepath.suffix.lower() not in self.SUPPORTED_EXTENSIONS:
+        if filepath.suffix.lower() not in EXT_TO_LANG:
             return False
 
         filename = filepath.name
