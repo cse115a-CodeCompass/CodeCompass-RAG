@@ -1,4 +1,3 @@
-# pip install -U langchain-text-splitters
 from pathlib import Path
 from typing import List, Optional
 from bisect import bisect_right
