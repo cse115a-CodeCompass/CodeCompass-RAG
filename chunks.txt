@@ -1,0 +1,219 @@
+def __init__(self, product_id, name, price, stock_quantity, category):
+        self.product_id = product_id
+        self.name = name
+        self.price = price
+        self.stock_quantity = stock_quantity
+        self.category = category
+        self.discount_percentage = 0
+-------------------------------------------------------
+def apply_discount(self, percentage):
+        """Apply a discount to the product.
+        
+        Args:
+            percentage (float): Discount percentage (0-100)
+        
+        Returns:
+            float: New discounted price
+        """
+        if 0 <= percentage <= 100:
+            self.discount_percentage = percentage
+            return self.price * (1 - percentage / 100)
+        raise ValueError("Discount must be between 0 and 100")
+-------------------------------------------------------
+def is_in_stock(self):
+        """Check if product is available in stock."""
+        return self.stock_quantity > 0
+-------------------------------------------------------
+def reduce_stock(self, quantity):
+        """Reduce stock quantity after a purchase."""
+        if quantity > self.stock_quantity:
+            raise ValueError("Insufficient stock")
+        self.stock_quantity -= quantity
+-------------------------------------------------------
+def __init__(self, user_id):
+        self.user_id = user_id
+        self.items = []
+        self.total = 0
+-------------------------------------------------------
+def add_item(self, product, quantity):
+        """Add a product to the cart.
+        
+        Args:
+            product (Product): Product to add
+            quantity (int): Number of items to add
+        """
+        if not product.is_in_stock():
+            raise ValueError(f"Product {product.name} is out of stock")
+        
+        item = {
+            'product': product,
+            'quantity': quantity,
+            'price': product.price
+        }
+        self.items.append(item)
+        self.calculate_total()
+-------------------------------------------------------
+def remove_item(self, product_id):
+        """Remove a product from the cart by ID."""
+        self.items = [item for item in self.items 
+                      if item['product'].product_id != product_id]
+        self.calculate_total()
+-------------------------------------------------------
+def calculate_total(self):
+        """Calculate the total price of all items in cart."""
+        self.total = sum(
+            item['price'] * item['quantity'] 
+            for item in self.items
+        )
+        return self.total
+-------------------------------------------------------
+def apply_promo_code(self, code):
+        """Apply promotional discount code.
+        
+        Args:
+            code (str): Promo code to apply
+            
+        Returns:
+            float: New total after discount
+        """
+        discount_map = {
+            'SAVE10': 0.10,
+            'SAVE20': 0.20,
+            'FREESHIP': 0.05
+        }
+        
+        if code in discount_map:
+            discount = discount_map[code]
+            self.total *= (1 - discount)
+            return self.total
+        raise ValueError("Invalid promo code")
+-------------------------------------------------------
+def generate_summary(self, region: str = "US-CA", currency: str = "USD", width: int = 72) -> str:
+        """
+        Build a concise receipt-style summary of the cart.
+
+        Args:
+            region: Region code that determines simple tax/shipping rules.
+            currency: ISO-ish currency label used for display only.
+            width: Line width for separators.
+
+        Returns:
+            A multi-line string with item rows and totals.
+        """
+        # Small, simple lookups (kept tiny on purpose)
+        TAX = {
+            "US-CA": {"default": 0.0825, "books": 0.00, "grocery": 0.00},
+            "EU-DE": {"default": 0.19,   "books": 0.07, "grocery": 0.07},
+        }
+        SHIPPING = {
+            # (threshold, base, per_item)
+            "US-CA": [(0, 5.00, 0.25), (50, 2.50, 0.10), (100, 0.00, 0.00)],
+            "EU-DE": [(0, 7.00, 0.30), (70, 3.50, 0.15), (140, 0.00, 0.00)],
+        }
+
+        def money(x: float) -> str:
+            return f"{currency} {x:.2f}"
+
+        lines = []
+        sep = "-" * width
+        lines += [
+            "=" * width,
+            f"Cart summary for user {self.user_id}",
+            sep,
+            f"{'ID':<10} {'Name':<24} {'Cat':<10} {'Qty':>3} {'Price':>10} {'Ext':>10}",
+            sep,
+        ]
+
+        # Recompute
+        subtotal = 0.0
+        item_count = 0
+        category_totals = {}
+
+        for idx, item in enumerate(self.items, 1):
+            p = item["product"]
+            qty = int(item.get("quantity", 0))
+            price = float(item.get("price", p.price))
+            cat = getattr(p, "category", "default") or "default"
+            ext = price * qty
+
+            subtotal += ext
+            item_count += qty
+            category_totals[cat] = category_totals.get(cat, 0.0) + ext
+
+            lines.append(
+                f"{str(p.product_id)[:10]:<10} {p.name[:24]:<24} {cat[:10]:<10} "
+                f"{qty:>3} {money(price):>10} {money(ext):>10}"
+            )
+
+        if not self.items:
+            lines.append("(no items)")
+        lines.append(sep)
+        lines.append(f"Subtotal: {money(subtotal)}")
+
+        # Tax
+        tax_table = TAX.get(region, TAX["US-CA"])
+        total_tax = 0.0
+        for cat, amt in category_totals.items():
+            rate = tax_table.get(cat, tax_table["default"])
+            total_tax += amt * rate
+        lines.append(f"Tax ({region}): {money(total_tax)}")
+
+        # Shipping
+        rules = SHIPPING.get(region, SHIPPING["US-CA"])
+        base, per_item = 0.0, 0.0
+        for thr, b, per in rules:
+            if subtotal >= thr:
+                base, per_item = b, per
+        shipping = base + item_count * per_item
+        lines.append(f"Shipping: {money(shipping)}")
+
+        # Compare with self.total if set
+        grand = subtotal + total_tax + shipping
+        lines.append(sep)
+        lines.append(f"Grand total: {money(grand)}")
+        if isinstance(getattr(self, "total", None), (int, float)):
+            drift = self.total - grand
+            lines.append(f"self.total:  {money(self.total)}  (drift: {money(drift)})")
+
+        lines.append("=" * width)
+        return "\n".join(lines)
+-------------------------------------------------------
+def validate_email(email):
+    """Validate email address format.
+    
+    Args:
+        email (str): Email to validate
+        
+    Returns:
+        bool: True if valid, False otherwise
+    """
+    pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    return bool(re.match(pattern, email))
+-------------------------------------------------------
+def validate_credit_card(card_number):
+    """Validate credit card using Luhn algorithm.
+    
+    Args:
+        card_number (str): Card number to validate
+        
+    Returns:
+        bool: True if valid according to Luhn algorithm
+    """
+    card_number = card_number.replace(' ', '').replace('-', '')
+    
+    if not card_number.isdigit():
+        return False
+    
+    # Luhn algorithm
+    digits = [int(d) for d in card_number]
+    checksum = 0
+    
+    for i, digit in enumerate(reversed(digits)):
+        if i % 2 == 1:
+            digit *= 2
+            if digit > 9:
+                digit -= 9
+        checksum += digit
+    
+    return checksum % 10 == 0
+-------------------------------------------------------
