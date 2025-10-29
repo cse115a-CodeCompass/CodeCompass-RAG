@@ -105,3 +105,94 @@ class ShoppingCart:
             return self.total
         raise ValueError("Invalid promo code")
 
+    def generate_summary(self, region: str = "US-CA", currency: str = "USD", width: int = 72) -> str:
+        """
+        Build a concise receipt-style summary of the cart.
+
+        Args:
+            region: Region code that determines simple tax/shipping rules.
+            currency: ISO-ish currency label used for display only.
+            width: Line width for separators.
+
+        Returns:
+            A multi-line string with item rows and totals.
+        """
+        # Small, simple lookups (kept tiny on purpose)
+        TAX = {
+            "US-CA": {"default": 0.0825, "books": 0.00, "grocery": 0.00},
+            "EU-DE": {"default": 0.19,   "books": 0.07, "grocery": 0.07},
+        }
+        SHIPPING = {
+            # (threshold, base, per_item)
+            "US-CA": [(0, 5.00, 0.25), (50, 2.50, 0.10), (100, 0.00, 0.00)],
+            "EU-DE": [(0, 7.00, 0.30), (70, 3.50, 0.15), (140, 0.00, 0.00)],
+        }
+
+        def money(x: float) -> str:
+            return f"{currency} {x:.2f}"
+
+        lines = []
+        sep = "-" * width
+        lines += [
+            "=" * width,
+            f"Cart summary for user {self.user_id}",
+            sep,
+            f"{'ID':<10} {'Name':<24} {'Cat':<10} {'Qty':>3} {'Price':>10} {'Ext':>10}",
+            sep,
+        ]
+
+        # Recompute
+        subtotal = 0.0
+        item_count = 0
+        category_totals = {}
+
+        for idx, item in enumerate(self.items, 1):
+            p = item["product"]
+            qty = int(item.get("quantity", 0))
+            price = float(item.get("price", p.price))
+            cat = getattr(p, "category", "default") or "default"
+            ext = price * qty
+
+            subtotal += ext
+            item_count += qty
+            category_totals[cat] = category_totals.get(cat, 0.0) + ext
+
+            lines.append(
+                f"{str(p.product_id)[:10]:<10} {p.name[:24]:<24} {cat[:10]:<10} "
+                f"{qty:>3} {money(price):>10} {money(ext):>10}"
+            )
+
+        if not self.items:
+            lines.append("(no items)")
+        lines.append(sep)
+        lines.append(f"Subtotal: {money(subtotal)}")
+
+        # Tax
+        tax_table = TAX.get(region, TAX["US-CA"])
+        total_tax = 0.0
+        for cat, amt in category_totals.items():
+            rate = tax_table.get(cat, tax_table["default"])
+            total_tax += amt * rate
+        lines.append(f"Tax ({region}): {money(total_tax)}")
+
+        # Shipping
+        rules = SHIPPING.get(region, SHIPPING["US-CA"])
+        base, per_item = 0.0, 0.0
+        for thr, b, per in rules:
+            if subtotal >= thr:
+                base, per_item = b, per
+        shipping = base + item_count * per_item
+        lines.append(f"Shipping: {money(shipping)}")
+
+        # Compare with self.total if set
+        grand = subtotal + total_tax + shipping
+        lines.append(sep)
+        lines.append(f"Grand total: {money(grand)}")
+        if isinstance(getattr(self, "total", None), (int, float)):
+            drift = self.total - grand
+            lines.append(f"self.total:  {money(self.total)}  (drift: {money(drift)})")
+
+        lines.append("=" * width)
+        return "\n".join(lines)
+
+

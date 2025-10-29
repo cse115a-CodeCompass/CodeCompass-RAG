@@ -5,7 +5,6 @@ from pathlib import Path
 from dotenv import load_dotenv
 from langchain_chroma import Chroma
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
-from langchain.prompts import ChatPromptTemplate
 from code_indexing import CodeIndexer
 from prompt import RAG_PROMPT
 
@@ -16,6 +15,10 @@ test_directory = str(Path("./test_files"))
 indexer = CodeIndexer(test_directory)
 indexer.index_directory()
 indexer.save_to_db()
+with open('chunks.txt', 'w', encoding='utf-8') as f:
+    for chunk in indexer.chunks:
+        f.write(chunk.page_content)
+        f.write('\n-------------------------------------------------------\n')
 vectorstore = Chroma(
     persist_directory=persist_directory,
     collection_name="codecompass_collection",
@@ -27,7 +30,7 @@ while question != "\\q" and True:
     docs = retriever.invoke(question) 
  
     context = "\n\n".join(
-         f"[{d.metadata.get('path','?')}:L{d.metadata.get('start_line','?')}-{d.metadata.get('end_line','?')}]\n{d.page_content}"
+         f"File: {d.metadata.get('path','?')}\nLine Number: {d.metadata.get('start_line','?')}-{d.metadata.get('end_line','?')}\nClass: {d.metadata.get('class','Function not from a class')}\n{d.page_content}"
         for d in docs
     )
 
