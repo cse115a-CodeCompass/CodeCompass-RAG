@@ -1,9 +1,12 @@
 from pathlib import Path
-from typing import List, Optional
 from bisect import bisect_right
+import os
 from langchain_text_splitters import Language, RecursiveCharacterTextSplitter
 from langchain_core.documents import Document
-
+from typing import List, Optional, Tuple
+from tree_sitter import Language as TS_Language, Parser, Query, QueryCursor
+import tree_sitter_python
+from graph_model import Graph, Node, NodeLabel
 
 EXT_TO_LANG = {
     ".c": Language.C, ".h": Language.C,
@@ -37,24 +40,25 @@ EXT_TO_LANG = {
     ".cls": Language.VISUALBASIC6, ".vbp": Language.VISUALBASIC6,
 }
 
-from tree_sitter import Language, Parser, Query, QueryCursor
-import tree_sitter_python
 
 EXT_TO_LANG_TS = {
-    ".py": Language(tree_sitter_python.language()),
-
+    ".py": TS_Language(tree_sitter_python.language()),
 }
 
 class CodeChunker:
-    """Split code files into LangChain Documents"""
-    def __init__(self, chunk_size: int = 800, overlap: int = 100):
-        self.chunk_size = int(chunk_size)
-        self.overlap = int(overlap)
-    
-    def chunk(self, code: str, filepath: Optional[str] = None) -> List[Document]:
-        ext = Path(filepath).suffix.lower() if filepath else ""
+    """Extracts hierarchical definitions (classes/functions/methods) from a file using Tree-sitter."""
+    def __init__(self):
+        pass
+
+    def extract_hierarchy(self, code: str, filepath: str) -> Tuple[List[Node], List[Tuple[str, str]]]:
+        """
+        Returns:
+          nodes: definition nodes found in the file (CLASS/FUNCTION/METHOD)
+          internal_edges: list of (parent_node_id, child_node_id) for class→method containment
+        """
+        ext = Path(filepath).suffix.lower()
         if ext not in EXT_TO_LANG_TS:
-            return self.chunk_fallback(code, filepath)
+            return [], []
 
         ts_lang = EXT_TO_LANG_TS[ext]
         parser = Parser(ts_lang)
@@ -69,20 +73,19 @@ class CodeChunker:
         def first(x):
             return x[0] if isinstance(x, list) else x
 
-        def char_index(byte_idx: int) -> int:
+        def char_to_line_indices(src: str):
+            starts = [0]
+            for i, ch in enumerate(src):
+                if ch == "\n":
+                    starts.append(i + 1)
+            return starts
+
+        def byte_to_char_index(byte_idx: int) -> int:
             return len(code_bytes[:byte_idx].decode("utf8"))
 
-        line_starts = [0]
-        for i, ch in enumerate(code):
-            if ch == "\n":
-                line_starts.append(i + 1)
+        line_starts = char_to_line_indices(code)
 
-        lang = EXT_TO_LANG.get(ext)
-        base_meta = {
-            "path": filepath or "",
-            "language": (lang.value if lang else "plain"),
-        }
-
+        # Queries (Python)
         q_methods = Query(ts_lang, r"""
         (class_definition
         name: (identifier) @class.name
@@ -93,139 +96,105 @@ class CodeChunker:
             (decorated_definition
                 (function_definition
                 name: (identifier) @method.name)) @method.def
-            ]))
+            ])) @class.def
         """)
 
         q_functions = Query(ts_lang, r"""
         [
-        (module
-            (function_definition
-            name: (identifier) @func.name) @func.def)
-        (module
-            (decorated_definition
-            (function_definition
-                name: (identifier) @func.name)) @func.def)
+          (module (function_definition name: (identifier) @func.name) @func.def)
+          (module (decorated_definition
+              (function_definition name: (identifier) @func.name)) @func.def)
         ]
         """)
 
-        def iter_caps(cursor, node):
-            for m in cursor.matches(node):
-                if isinstance(m, tuple) and len(m) == 2 and isinstance(m[1], dict):
-                    yield m[1]
-                elif isinstance(m, dict):
-                    yield m
-                else:
-                    caps = getattr(m, "captures", None)
-                    if isinstance(caps, dict):
-                        yield caps
+        def iter_caps(query, node):
+            cursor = QueryCursor(query)
+            for _, caps in cursor.matches(node):
+                yield caps
 
-        units = []
+        file_uri = Path(filepath).resolve().as_uri()
 
-        cur = QueryCursor(q_methods)
-        for caps in iter_caps(cur, root):
-            cls_node = first(caps["class.name"])
-            meth_name_node = first(caps["method.name"])
-            def_node = first(caps["method.def"])
+        # Create CLASS/METHOD nodes (with internal edges class -> method)
+        nodes: List[Node] = []
+        internal_edges: List[Tuple[str, str]] = []
 
-            cls_name = text(cls_node)
-            meth_name = text(meth_name_node)
+        # Helper: stable node ids
+        def def_id(label: NodeLabel, name: str, start_line: int, end_line: int) -> str:
+            return f"{label}:{file_uri}#{start_line}-{end_line}:{name}"
 
-            start_b, end_b = def_node.start_byte, def_node.end_byte
-            start_c, end_c = char_index(start_b), char_index(end_b)
+        # Classes + methods (plain methods only)
+        have_class: set[str] = set()
 
-            units.append({
-                "unit": "method",
-                "class": cls_name,
-                "symbol": f"{cls_name}.{meth_name}",
-                "name": meth_name,
-                "start_char": start_c,
-                "end_char": end_c,
-            })
+        for _, caps in QueryCursor(q_methods).matches(root):
+            # Class captures
+            cls_name_node = caps["class.name"][0]
+            cls_def_node  = caps["class.def"][0]
 
-        cur = QueryCursor(q_functions)
-        for caps in iter_caps(cur, root):
+            cls_name = text(cls_name_node)
+
+            c_start_b, c_end_b = cls_def_node.start_byte, cls_def_node.end_byte
+            c_start_c, c_end_c = byte_to_char_index(c_start_b), byte_to_char_index(c_end_b)
+            c_start_line = bisect_right(line_starts, c_start_c)
+            c_end_line   = bisect_right(line_starts, max(0, c_end_c - 1))
+
+            class_id = def_id(NodeLabel.CLASS, cls_name, c_start_line, c_end_line)
+            if class_id not in have_class:
+                nodes.append(Node(
+                    id=class_id,
+                    label=NodeLabel.CLASS,
+                    path=file_uri,
+                    name=cls_name,
+                    start_line=c_start_line,
+                    end_line=c_end_line,
+                ))
+                have_class.add(class_id)
+
+            # Method captures — normalize to lists, then iterate pairs
+            name_nodes = caps.get("method.name", [])
+            def_nodes  = caps.get("method.def", [])
+            if not isinstance(name_nodes, list): name_nodes = [name_nodes] if name_nodes else []
+            if not isinstance(def_nodes,  list): def_nodes  = [def_nodes]  if def_nodes  else []
+
+            for name_node, def_node in zip(name_nodes, def_nodes):
+                m_name = text(name_node)
+
+                m_start_b, m_end_b = def_node.start_byte, def_node.end_byte
+                m_start_c, m_end_c = byte_to_char_index(m_start_b), byte_to_char_index(m_end_b)
+                m_start_line = bisect_right(line_starts, m_start_c)
+                m_end_line   = bisect_right(line_starts, max(0, m_end_c - 1))
+
+                method_id = def_id(NodeLabel.METHOD, m_name, m_start_line, m_end_line)
+                nodes.append(Node(
+                    id=method_id,
+                    label=NodeLabel.METHOD,
+                    path=file_uri,
+                    name=m_name,
+                    start_line=m_start_line,
+                    end_line=m_end_line,
+                    extra={"class": cls_name},
+                ))
+                internal_edges.append((class_id, method_id))
+
+
+        # Top-level functions
+        for caps in iter_caps(q_functions, root):
             func_name_node = first(caps["func.name"])
             def_node = first(caps["func.def"])
 
-            func_name = text(func_name_node)
+            f_name = text(func_name_node)
+            f_start_b, f_end_b = def_node.start_byte, def_node.end_byte
+            f_start_c, f_end_c = byte_to_char_index(f_start_b), byte_to_char_index(f_end_b)
+            f_start_line = bisect_right(line_starts, f_start_c)
+            f_end_line = bisect_right(line_starts, max(0, f_end_c - 1))
 
-            start_b, end_b = def_node.start_byte, def_node.end_byte
-            start_c, end_c = char_index(start_b), char_index(end_b)
+            func_id = def_id(NodeLabel.FUNCTION, f_name, f_start_line, f_end_line)
+            nodes.append(Node(
+                id=func_id,
+                label=NodeLabel.FUNCTION,
+                path=file_uri,
+                name=f_name,
+                start_line=f_start_line,
+                end_line=f_end_line,
+            ))
 
-            units.append({
-                "unit": "function",
-                "class": None,
-                "symbol": func_name,
-                "name": func_name,
-                "start_char": start_c,
-                "end_char": end_c,
-            })
-
-        if not units:
-            return self.chunk_fallback(code, filepath)
-
-        units.sort(key=lambda u: (u["start_char"], u["end_char"]))
-
-        docs: List[Document] = []
-        for u in units:
-            unit_text = code[u["start_char"]:u["end_char"]]
-            meta = base_meta | {
-                "unit": u["unit"],
-                "symbol": u["symbol"],
-                "name": u["name"],
-                "class": u["class"],
-                "start_char": u["start_char"],
-                "end_char": u["end_char"],
-                "start_line": bisect_right(line_starts, u["start_char"]),
-                "end_line": bisect_right(line_starts, u["end_char"] - 1),
-                "chunk_index": 0, "total_chunks": 1,
-            }
-            docs.append(Document(page_content=unit_text, metadata=meta))
-        return docs
-
-
-    def chunk_fallback(self, code: str, filepath: Optional[str] = None) -> List[Document]:
-        ext = Path(filepath).suffix.lower() if filepath else ""
-        lang = EXT_TO_LANG.get(ext)
-
-        splitter_kwargs = dict(
-            chunk_size=self.chunk_size,
-            chunk_overlap=self.overlap,
-            add_start_index=True,
-        )
-        splitter = (
-            RecursiveCharacterTextSplitter.from_language(language=lang, **splitter_kwargs)
-            if lang
-            else RecursiveCharacterTextSplitter(**splitter_kwargs)
-        )
-
-        base_meta = {
-            "path": filepath or "",
-            "language": (lang.value if lang else "plain"),
-        }
-
-        docs = splitter.create_documents(texts=[code], metadatas=[base_meta])
-
-        line_starts = [0]
-        for i, ch in enumerate(code):
-            if ch == "\n":
-                line_starts.append(i + 1)
-
-        total = len(docs)
-        for i, d in enumerate(docs):
-            start_char = d.metadata.get("start_index")
-            if start_char is not None:
-                end_char = start_char + len(d.page_content)
-                end_char_incl = max(0, end_char - 1)
-                start_line = bisect_right(line_starts, start_char)
-                end_line = bisect_right(line_starts, end_char_incl)
-                d.metadata.update({
-                    "start_char": start_char,
-                    "end_char": end_char,
-                    "start_line": start_line,
-                    "end_line": end_line,
-                })
-
-            d.metadata.update({"chunk_index": i, "total_chunks": total})
-
-        return docs
+        return nodes, internal_edges
