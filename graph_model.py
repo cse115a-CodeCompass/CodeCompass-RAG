@@ -15,6 +15,8 @@ class NodeLabel(str, Enum):
 
 class EdgeType(str, Enum):
     CONTAINS = "CONTAINS"
+    CALLS = "CALLS"
+    IMPORTS = "IMPORTS"
 
 @dataclass
 class Node:
@@ -43,6 +45,10 @@ class Graph:
 
     def add_contains(self, parent_id: str, child_id: str):
         self.edges.append(Edge(src=parent_id, dst=child_id, type=EdgeType.CONTAINS))
+
+    def add_edge(self, src_id: str, dst_id: str, edge_type: EdgeType):
+        """Add an edge of any type between two nodes."""
+        self.edges.append(Edge(src=src_id, dst=dst_id, type=edge_type))
     
         # ---- adjacency + k-hop traversal ----
     def _build_adj(self) -> Tuple[Dict[str, Set[str]], Dict[str, Set[str]]]:
