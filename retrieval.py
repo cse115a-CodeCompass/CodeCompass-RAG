@@ -185,7 +185,7 @@ def main():
     VOYAGE_API_KEY = os.environ.get("VOYAGE_API_KEY")
 
     persist_directory = str(Path("./chroma_db"))
-    test_directory = str(Path("./pacai"))
+    test_directory = str(Path("./example_repos/pacai"))
 
     # 0) Build the KG with multi-language support
     print("Building knowledge graph from code...")
@@ -271,7 +271,7 @@ def main():
             KG,
             vectorstore,
             question,
-            k_seeds=5,     # seeds from vector DB
+            k_seeds=3,     # seeds from vector DB
             hops=3,        # 1 hop: parent/children/siblings if your graph is wired that way
             max_neighbors=25,
             max_chars=8000,
