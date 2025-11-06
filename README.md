@@ -3,10 +3,18 @@
 ## TODO:
 - Add support more other languages (more handlers)
 - Fallback handler for unsupported languages
-- More integrated knowledge graph (inheritance between classes, parameters of functions)
+- More integrated knowledge graph (inheritance between classes, parameters of functions, custom classes used with functions)
 - Figure out local embedding (too slow for me)
-- Further prompt engineering
+- Prompt engineering
+    - How much of the given context should the LLM use?
+    - How should the LLM ignore "irrelevant" context?
+    - How many code blocks should be presented, in what order, etc?
+    - How should the response be formatted?
 - Ideal number of seeds and hops
+    - Seeds: The top-k chunks from semantic search.
+    - Hops: The chunks "around" the seeds in the knowledge graph. 
+- Ranking of neighbors: Simple heuristic: seed score + hop penalty + edge weights
+- Keyword search
 
 CodeCompass indexes a codebase into:
 1. **Knowledge Graph** - Code elements (classes, functions, methods) and relationships (CONTAINS, CALLS, IMPORTS)
