@@ -9,7 +9,7 @@ from typing import Dict, List, Tuple
 from pathlib import Path
 
 from lsp.lsp_client import LSPClient
-from language_handler import LanguageHandler
+from languages.language_handler import LanguageHandler
 
 
 class LSPManager:

@@ -98,11 +98,20 @@ def map_location_to_node(span_index: Dict[str, List[Tuple[int, int, str]]],
     uri = normalize_uri(uri)
     spans = span_index.get(uri, [])
 
+    # Find the most specific (smallest) span that contains the line
+    # This is important because class spans contain method spans,
+    # and we want to return the method, not the class
+    best_match = None
+    best_span_size = float('inf')
+
     for start, end, node_id in spans:
         if start <= line <= end:
-            return node_id
+            span_size = end - start
+            if span_size < best_span_size:
+                best_match = node_id
+                best_span_size = span_size
 
-    return None
+    return best_match
 
 
 def add_imports_edges(graph: Graph, lsp_manager: LSPManager) -> int:
@@ -274,9 +283,10 @@ def add_calls_edges(graph: Graph,
     lsp_resolved = 0
     mapped_to_nodes = 0
 
-    # Get all definition nodes (CLASS, FUNCTION, METHOD)
+    # Get all executable definition nodes (FUNCTION, METHOD)
+    # Note: CLASS nodes are NOT included because classes don't execute code
     def_nodes = [n for n in graph.nodes.values()
-                 if n.label in {NodeLabel.CLASS, NodeLabel.FUNCTION, NodeLabel.METHOD}]
+                 if n.label in {NodeLabel.FUNCTION, NodeLabel.METHOD}]
 
     if debug:
         print(f"  [DEBUG] Processing {len(def_nodes)} definition nodes for CALLS edges")
@@ -317,7 +327,7 @@ def add_calls_edges(graph: Graph,
 
             identifiers_found += len(identifiers)
             if debug and identifiers:
-                print(f"  [DEBUG] Found {len(identifiers)} identifiers in {caller_node.name}")
+                print(f"  [DEBUG] Found {len(identifiers)} identifiers in {caller_node.name} ({caller_node.label.value})")
 
             # For each identifier, try to resolve its definition
             for ident_name, line, col in identifiers:
@@ -336,6 +346,8 @@ def add_calls_edges(graph: Graph,
 
                     # Handle both single Location and Location[]
                     if result is None:
+                        if debug and caller_node.name in ['add', 'multiply', 'subtract', '_validate', '_log_operation']:
+                            print(f"  [DEBUG] LSP returned None for '{ident_name}' in {caller_node.name} at line {line}")
                         continue
 
                     lsp_resolved += 1
@@ -360,8 +372,20 @@ def add_calls_edges(graph: Graph,
                             target_line
                         )
 
+                        if debug and target_node_id is None and caller_node.name in ['add', 'multiply', 'subtract', '_validate']:
+                            print(f"  [DEBUG] Failed to map LSP location to node: {ident_name} -> {target_uri}:{target_line}")
+
                         if target_node_id:
                             mapped_to_nodes += 1
+
+                            # Don't create CALLS edges to CLASS nodes
+                            # (class references aren't function calls)
+                            target_node = graph.nodes.get(target_node_id)
+                            if target_node and target_node.label == NodeLabel.CLASS:
+                                if debug:
+                                    print(f"  [DEBUG] Skipping CALLS edge to CLASS: {caller_node.name} -> {target_node.name}")
+                                continue
+
                             if target_node_id != caller_node.id:
                                 # Add CALLS edge: caller -> callee
                                 graph.add_edge(

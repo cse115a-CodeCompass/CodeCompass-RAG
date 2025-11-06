@@ -274,8 +274,8 @@ class TypeScriptHandler(LanguageHandler):
         """
         Extract identifiers from a TypeScript/JavaScript code range for LSP queries.
 
-        Scans for all identifiers (variable names, function calls, class references)
-        within the specified line range, filtering out JS/TS keywords.
+        Uses Tree-sitter to extract only identifiers from actual code,
+        excluding comments, docstrings, and string literals.
 
         Args:
             source_code: Full source code of the file
@@ -285,17 +285,67 @@ class TypeScriptHandler(LanguageHandler):
         Returns:
             List of (identifier_name, line, column) tuples
         """
-        lines = source_code.splitlines(keepends=True)
+        tree = self.parser.parse(source_code.encode('utf-8'))
+        root = tree.root_node
+        code_bytes = source_code.encode('utf-8')
+
+        # Build line starts (byte positions where each line begins)
+        line_starts = [0]
+        for i, byte in enumerate(code_bytes):
+            if byte == ord('\n'):
+                line_starts.append(i + 1)
+
         out: List[Tuple[str, int, int]] = []
         seen = set()
 
-        for ln in range(start_line, min(end_line + 1, len(lines))):
-            line = lines[ln]
-            for m in IDENT.finditer(line):
-                name = m.group(0)
-                if name in JS_TS_KEYWORDS or name in seen:
-                    continue
-                seen.add(name)
-                out.append((name, ln, m.start()))
+        def traverse(node):
+            # Only process identifier nodes
+            if node.type == 'identifier':
+                # Check if this identifier is in a call position
+                is_call = False
+                parent = node.parent
 
+                if parent:
+                    # Case 1: Direct function call - func()
+                    # AST: call_expression(function: identifier)
+                    if parent.type == 'call_expression':
+                        func_node = parent.child_by_field_name('function')
+                        if func_node == node:
+                            is_call = True
+
+                    # Case 2: Method call - obj.method()
+                    # AST: call_expression(function: member_expression(property: identifier))
+                    elif parent.type == 'member_expression':
+                        prop_node = parent.child_by_field_name('property')
+                        if prop_node == node:
+                            grandparent = parent.parent
+                            if grandparent and grandparent.type == 'call_expression':
+                                func_node = grandparent.child_by_field_name('function')
+                                if func_node == parent:
+                                    is_call = True
+
+                # Only collect identifiers that are in call positions
+                if not is_call:
+                    return
+
+                # Get line number for this identifier
+                ident_line = bisect_right(line_starts, node.start_byte) - 1
+
+                # Check if identifier is within our target range
+                if start_line <= ident_line <= end_line:
+                    name = code_bytes[node.start_byte:node.end_byte].decode('utf-8')
+
+                    # Skip keywords and duplicates
+                    if name not in JS_TS_KEYWORDS and name not in seen:
+                        seen.add(name)
+                        # Calculate column (offset from line start)
+                        line_start_byte = line_starts[ident_line] if ident_line < len(line_starts) else 0
+                        col = node.start_byte - line_start_byte
+                        out.append((name, ident_line, col))
+
+            # Recursively traverse children
+            for child in node.children:
+                traverse(child)
+
+        traverse(root)
         return out
