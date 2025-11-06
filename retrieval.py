@@ -5,14 +5,14 @@ from dotenv import load_dotenv, find_dotenv
 from langchain_chroma import Chroma
 from ollama import chat, ChatResponse
 
-from code_indexing import CodeIndexer
+from core.code_indexing import CodeIndexer
 from prompt import RAG_PROMPT
-from process_graph import index_graph_into_vectors, node_text, _to_fs_path
-from lsp_edges import build_span_index, add_imports_edges, add_calls_edges, _uri_to_path
-from lsp_manager import LSPManager
-from graph_model import NodeLabel
-from language_config import ENABLED_LANGUAGES
-from class_header_extractor import ClassHeaderExtractor
+from vectorization.process_graph import index_graph_into_vectors, node_text, _to_fs_path
+from lsp.lsp_edges import build_span_index, add_imports_edges, add_calls_edges, _uri_to_path
+from lsp.lsp_manager import LSPManager
+from core.graph_model import NodeLabel
+from languages.language_config import ENABLED_LANGUAGES
+from vectorization.class_header_extractor import ClassHeaderExtractor
 load_dotenv(find_dotenv(usecwd=True))
 
 ALLOWED_LABELS = {NodeLabel.CLASS, NodeLabel.FUNCTION, NodeLabel.METHOD}
@@ -271,9 +271,9 @@ def main():
             KG,
             vectorstore,
             question,
-            k_seeds=1,     # seeds from vector DB
-            hops=50,        # 1 hop: parent/children/siblings if your graph is wired that way
-            max_neighbors=100,
+            k_seeds=5,     # seeds from vector DB
+            hops=3,        # 1 hop: parent/children/siblings if your graph is wired that way
+            max_neighbors=25,
             max_chars=8000,
             debug=True     # Enable GraphRAG debug logging
         )

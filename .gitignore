@@ -52,7 +52,7 @@ graph.txt
 ex.txt
 nul
 
-# Test/Example Data (comment out if needed)
+# Test/Example Data (keep examples/ as it contains demo files)
 pacai/
 practice/
 
