@@ -38,17 +38,24 @@ class Graph:
     def __init__(self):
         self.nodes: Dict[str, Node] = {}
         self.edges: List[Edge] = []
+        self._edge_set: Set[Tuple[str, str, EdgeType]] = set()  # For O(1) duplicate checking
 
     def add_node(self, n: Node) -> Node:
         self.nodes.setdefault(n.id, n)
         return self.nodes[n.id]
 
     def add_contains(self, parent_id: str, child_id: str):
-        self.edges.append(Edge(src=parent_id, dst=child_id, type=EdgeType.CONTAINS))
+        edge_key = (parent_id, child_id, EdgeType.CONTAINS)
+        if edge_key not in self._edge_set:
+            self._edge_set.add(edge_key)
+            self.edges.append(Edge(src=parent_id, dst=child_id, type=EdgeType.CONTAINS))
 
     def add_edge(self, src_id: str, dst_id: str, edge_type: EdgeType):
         """Add an edge of any type between two nodes."""
-        self.edges.append(Edge(src=src_id, dst=dst_id, type=edge_type))
+        edge_key = (src_id, dst_id, edge_type)
+        if edge_key not in self._edge_set:
+            self._edge_set.add(edge_key)
+            self.edges.append(Edge(src=src_id, dst=dst_id, type=edge_type))
 
         # ---- adjacency + k-hop traversal ----
     def _build_adj(self) -> Tuple[Dict[str, Set[str]], Dict[str, Set[str]]]:

@@ -6,7 +6,7 @@ from langchain_chroma import Chroma
 from ollama import chat, ChatResponse
 
 from core.code_indexing import CodeIndexer
-from prompt import RAG_PROMPT
+from prompt_query import RAG_PROMPT
 from vectorization.process_graph import index_graph_into_vectors, node_text, _to_fs_path
 from lsp.lsp_edges import build_span_index, add_imports_edges, add_calls_edges, _uri_to_path
 from lsp.lsp_manager import LSPManager
@@ -193,6 +193,11 @@ def main():
     indexer = CodeIndexer(test_directory, handlers=ENABLED_LANGUAGES)
     KG = indexer.index_directory()
     print(f"  Graph built: {len(KG.nodes)} nodes, {len(KG.edges)} CONTAINS edges")
+    # Write graph to file for debugging
+    with open("graph_nolsp.txt", "w", encoding='utf-8') as f:
+        f.write(f"Nodes: {len(KG.nodes)}  Edges: {len(KG.edges)}\n")
+        for e in KG.edges:
+            f.write(str(e.src) + " -> " + str(e.dst) + "\n")
 
     # 1) Add LSP edges (CALLS and IMPORTS)
     print("\nBuilding LSP edges (CALLS and IMPORTS)...")
@@ -246,7 +251,7 @@ def main():
         print(f"  Total edges: {len(KG.edges)} (CONTAINS + IMPORTS + CALLS)")
 
         # Write graph to file for debugging
-        with open("graph.txt", "w", encoding='utf-8') as f:
+        with open("graph_lsp.txt", "w", encoding='utf-8') as f:
             f.write(f"Nodes: {len(KG.nodes)}  Edges: {len(KG.edges)}\n")
             for e in KG.edges:
                 f.write(str(e.src) + " -> " + str(e.dst) + "\n")
@@ -282,7 +287,7 @@ def main():
 
         # Call your local LLM (Ollama)
         response: ChatResponse = chat(
-            model="phi3",
+            model="deepseek-r1",
             messages=[{"role": "user", "content": prompt}],
         )
 
