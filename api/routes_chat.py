@@ -4,26 +4,28 @@
 """
 
 from fastapi import APIRouter
-
 from fastapi import Request, HTTPException
 from fastapi.responses import StreamingResponse
+from fastapi.responses import RedirectResponse, JSONResponse
+
+import asyncio
 
 import json
 from pydantic import BaseModel
 import time
 
-from fastapi.responses import RedirectResponse, JSONResponse
+
+import requests # <<<--remove if not used!
+
 
 import ollama # Can remove this in the future
 
 #from Retreival_Pipeline.RAG_Agent import _
 
 # Define the FastAPI Router Object
-router = APIRouter()
+router = APIRouter(prefix="")
 
-
-
-# Define the expected request model
+# Define a request model using Pydantic for the chat API
 class RagRequest(BaseModel):
     userQuery: str
     conversationHistory: list
@@ -66,6 +68,7 @@ async def handle_rag_request_toy(request: Request):
         print(f"Error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @router.post("/chat-dummy/stream")
 async def handle_rag_request_toy_stream(request: Request):
     """
@@ -82,18 +85,7 @@ async def handle_rag_request_toy_stream(request: Request):
 
     chat_history.append({'role': 'user', 'content': user_query})
 
-    async def event_stream():
-        async for chunk in ollama.chat(
-            model = selected_model,
-            messages=[{"role": "user", "content": user_query}],
-            stream = True
-        ):
-            content = chunk.get("message", {}).get("content")
-            if content:
-                yield f"data: {json.dumps({'content': content})}\n\n"
-        yield "data: [DONE]\n\n"
 
-    return StreamingResponse(event_stream(), media_type="text/event-stream")
 
 ######################################################################
 
