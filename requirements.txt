@@ -1,0 +1,15 @@
+# Core FastAPI Dependencies
+fastapi>=0.115.0
+uvicorn[standard]>=0.32.0
+pydantic>=2.9.0
+
+# LLM Integration
+ollama>=0.3.0
+
+# HTTP Client
+requests>=2.32.0
+
+# Future/Optional Dependencies (currently commented out in code)
+# Uncomment when implementing Git/GitHub functionality
+# PyGithub>=2.4.0
+# GitPython>=3.1.43
