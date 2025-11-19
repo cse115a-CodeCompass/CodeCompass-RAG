@@ -25,6 +25,10 @@ class CodeIndexer:
         self.base_dir = Path(base_dir).resolve()
         self.handlers = handlers
 
+        # Set repo_root on all handlers for stable node IDs
+        for handler in handlers:
+            handler.repo_root = str(self.base_dir)
+
         # Build mapping from file extension to handler
         self.ext_to_handler: Dict[str, LanguageHandler] = {}
         for handler in handlers:
@@ -70,10 +74,27 @@ class CodeIndexer:
         return True
 
     def _folder_id(self, path: Path) -> str:
-        return f"folder:{path.resolve().as_uri()}"
+        """Generate stable, repo-relative folder ID."""
+        try:
+            rel_path = path.resolve().relative_to(self.base_dir)
+            rel_path_str = str(rel_path).replace("\\", "/")
+            # Handle repo root folder
+            if rel_path_str == ".":
+                rel_path_str = path.name or "root"
+        except ValueError:
+            # Path outside repo - use just the name
+            rel_path_str = path.name
+        return f"folder:{rel_path_str}"
 
     def _file_id(self, path: Path) -> str:
-        return f"file:{path.resolve().as_uri()}"
+        """Generate stable, repo-relative file ID."""
+        try:
+            rel_path = path.resolve().relative_to(self.base_dir)
+            rel_path_str = str(rel_path).replace("\\", "/")
+        except ValueError:
+            # Path outside repo - use just the name
+            rel_path_str = path.name
+        return f"file:{rel_path_str}"
 
     def _ensure_folder_nodes(self, folder: Path) -> str:
         """Ensure nodes for each ancestor from base_dir → folder, wire CONTAINS edges."""

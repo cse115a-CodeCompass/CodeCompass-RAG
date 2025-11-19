@@ -23,7 +23,13 @@ class LanguageHandler(ABC):
     4. Identifier collection for CALLS edge building (language-specific)
 
     The graph model (Node/Edge) remains language-agnostic.
+
+    Attributes:
+        repo_root: Repository root path (set by CodeIndexer for repo-relative node IDs)
     """
+
+    def __init__(self):
+        self.repo_root = None  # Set by CodeIndexer after instantiation
 
     @abstractmethod
     def get_file_extensions(self) -> List[str]:

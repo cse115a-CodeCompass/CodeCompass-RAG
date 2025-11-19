@@ -38,6 +38,7 @@ class TypeScriptHandler(LanguageHandler):
     """Handler for TypeScript and JavaScript (.ts, .tsx, .js, .jsx files)"""
 
     def __init__(self):
+        super().__init__()
         # Load TypeScript Tree-sitter grammar (handles both TS and JS)
         self.ts_language = TS_Language(tree_sitter_typescript.language_typescript())
         self.tsx_language = TS_Language(tree_sitter_typescript.language_tsx())
@@ -93,7 +94,20 @@ class TypeScriptHandler(LanguageHandler):
             return len(code_bytes[:byte_idx].decode('utf-8'))
 
         line_starts = char_to_line_indices(source_code)
-        file_uri = Path(file_path).resolve().as_uri()
+        # Use resolved filesystem path (consistent with FILE nodes in code_indexing.py)
+        resolved_path = str(Path(file_path).resolve())
+
+        # Compute repo-relative path for stable node IDs
+        if self.repo_root:
+            try:
+                rel_path = Path(file_path).resolve().relative_to(Path(self.repo_root).resolve())
+                rel_path_str = str(rel_path).replace("\\", "/")
+            except ValueError:
+                # File outside repo - use basename as fallback
+                rel_path_str = Path(file_path).name
+        else:
+            # No repo_root set - use basename
+            rel_path_str = Path(file_path).name
 
         # Query for classes with methods
         q_methods = Query(self.ts_language, r"""
@@ -126,9 +140,14 @@ class TypeScriptHandler(LanguageHandler):
 
         nodes: List[Node] = []
 
-        # Helper: stable node IDs
-        def def_id(label: NodeLabel, name: str, start_line: int, end_line: int) -> str:
-            return f"{label.value}:{file_uri}#{start_line}-{end_line}:{name}"
+        # Helper: stable node IDs (repo-relative, no line numbers)
+        def def_id(label: NodeLabel, name: str, class_name: str = "") -> str:
+            if class_name:
+                # Method: include class name for uniqueness
+                return f"{label.value}:{rel_path_str}:{class_name}.{name}"
+            else:
+                # Class or top-level function
+                return f"{label.value}:{rel_path_str}:{name}"
 
         # Track classes and functions we've seen (to avoid duplicates)
         have_class: set[str] = set()
@@ -148,12 +167,12 @@ class TypeScriptHandler(LanguageHandler):
             c_start_line = bisect_right(line_starts, c_start_c) - 1
             c_end_line = bisect_right(line_starts, max(0, c_end_c - 1)) - 1
 
-            class_id = def_id(NodeLabel.CLASS, cls_name, c_start_line, c_end_line)
+            class_id = def_id(NodeLabel.CLASS, cls_name)
             if class_id not in have_class:
                 nodes.append(Node(
                     id=class_id,
                     label=NodeLabel.CLASS,
-                    path=file_uri,
+                    path=resolved_path,
                     name=cls_name,
                     start_line=c_start_line,
                     end_line=c_end_line,
@@ -177,11 +196,11 @@ class TypeScriptHandler(LanguageHandler):
                 m_start_line = bisect_right(line_starts, m_start_c) - 1
                 m_end_line = bisect_right(line_starts, max(0, m_end_c - 1)) - 1
 
-                method_id = def_id(NodeLabel.METHOD, m_name, m_start_line, m_end_line)
+                method_id = def_id(NodeLabel.METHOD, m_name, class_name=cls_name)
                 nodes.append(Node(
                     id=method_id,
                     label=NodeLabel.METHOD,
-                    path=file_uri,
+                    path=resolved_path,
                     name=m_name,
                     start_line=m_start_line,
                     end_line=m_end_line,
@@ -201,12 +220,12 @@ class TypeScriptHandler(LanguageHandler):
             f_start_line = bisect_right(line_starts, f_start_c) - 1
             f_end_line = bisect_right(line_starts, max(0, f_end_c - 1)) - 1
 
-            func_id = def_id(NodeLabel.FUNCTION, f_name, f_start_line, f_end_line)
+            func_id = def_id(NodeLabel.FUNCTION, f_name)
             if func_id not in have_function:
                 nodes.append(Node(
                     id=func_id,
                     label=NodeLabel.FUNCTION,
-                    path=file_uri,
+                    path=resolved_path,
                     name=f_name,
                     start_line=f_start_line,
                     end_line=f_end_line,
@@ -226,12 +245,12 @@ class TypeScriptHandler(LanguageHandler):
             f_start_line = bisect_right(line_starts, f_start_c) - 1
             f_end_line = bisect_right(line_starts, max(0, f_end_c - 1)) - 1
 
-            func_id = def_id(NodeLabel.FUNCTION, f_name, f_start_line, f_end_line)
+            func_id = def_id(NodeLabel.FUNCTION, f_name)
             if func_id not in have_function:
                 nodes.append(Node(
                     id=func_id,
                     label=NodeLabel.FUNCTION,
-                    path=file_uri,
+                    path=resolved_path,
                     name=f_name,
                     start_line=f_start_line,
                     end_line=f_end_line,

@@ -28,6 +28,15 @@ class Node:
     end_line: Optional[int] = None     # 0-based
     extra: Dict[str, str] = field(default_factory=dict)
 
+    # AI Documentation: Summary fields
+    summary_short: Optional[str] = None      # 1-3 sentences describing purpose/role
+    summary_detailed: Optional[str] = None   # 1-2 paragraphs with key details
+
+    # AI Documentation: Code metrics
+    loc: Optional[int] = None                # Lines of code (end_line - start_line + 1)
+    fan_in: int = 0                          # Number of incoming CALLS edges
+    fan_out: int = 0                         # Number of outgoing CALLS edges
+
 @dataclass
 class Edge:
     src: str
@@ -103,3 +112,83 @@ class Graph:
                 break
 
         return list(seen)
+
+    def save(self, path: str):
+        """Save graph to JSON file."""
+        import json
+        from pathlib import Path as PathLib
+
+        # Convert to serializable format
+        data = {
+            "nodes": [
+                {
+                    "id": n.id,
+                    "label": n.label.value,
+                    "path": n.path,
+                    "name": n.name,
+                    "start_line": n.start_line,
+                    "end_line": n.end_line,
+                    "extra": n.extra,
+                    "summary_short": n.summary_short,
+                    "summary_detailed": n.summary_detailed,
+                    "loc": n.loc,
+                    "fan_in": n.fan_in,
+                    "fan_out": n.fan_out
+                }
+                for n in self.nodes.values()
+            ],
+            "edges": [
+                {
+                    "src": e.src,
+                    "dst": e.dst,
+                    "type": e.type.value
+                }
+                for e in self.edges
+            ]
+        }
+
+        # Write to file
+        PathLib(path).parent.mkdir(parents=True, exist_ok=True)
+        with open(path, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=2)
+
+    @staticmethod
+    def load(path: str) -> 'Graph':
+        """Load graph from JSON file."""
+        import json
+
+        with open(path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+
+        graph = Graph()
+
+        # Load nodes
+        for node_data in data["nodes"]:
+            node = Node(
+                id=node_data["id"],
+                label=NodeLabel(node_data["label"]),
+                path=node_data["path"],
+                name=node_data["name"],
+                start_line=node_data.get("start_line"),
+                end_line=node_data.get("end_line"),
+                extra=node_data.get("extra", {}),
+                summary_short=node_data.get("summary_short"),
+                summary_detailed=node_data.get("summary_detailed"),
+                loc=node_data.get("loc"),
+                fan_in=node_data.get("fan_in", 0),
+                fan_out=node_data.get("fan_out", 0)
+            )
+            graph.nodes[node.id] = node
+
+        # Load edges
+        for edge_data in data["edges"]:
+            edge = Edge(
+                src=edge_data["src"],
+                dst=edge_data["dst"],
+                type=EdgeType(edge_data["type"])
+            )
+            graph.edges.append(edge)
+            edge_key = (edge.src, edge.dst, edge.type)
+            graph._edge_set.add(edge_key)
+
+        return graph
