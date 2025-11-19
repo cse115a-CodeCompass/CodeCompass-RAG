@@ -67,58 +67,36 @@ async def handle_rag_request_toy_stream(request: Request):
     # Parse request body BEFORE creating the streaming response
     try:
         body = await request.json()
-        print(f"[/chat-dummy/stream] Received request body: {body}")
-
         rag_request = RagRequest(**body)
         chat_history = rag_request.conversationHistory
         user_query = rag_request.userQuery
         selected_model = rag_request.selectedModel
 
-        print(f"[/chat-dummy/stream] User query: {user_query}")
-        print(f"[/chat-dummy/stream] Selected model: {selected_model}")
-        print(f"[/chat-dummy/stream] Conversation history length: {len(chat_history)}")
-
     except json.JSONDecodeError as e:
-        print(f"[/chat-dummy/stream] ERROR: Invalid JSON - {str(e)}")
         raise HTTPException(status_code=400, detail="Invalid JSON in request body")
     except KeyError as e:
-        print(f"[/chat-dummy/stream] ERROR: Missing required field - {str(e)}")
         raise HTTPException(status_code=400, detail=f"Missing required field: {str(e)}")
     except Exception as e:
-        print(f"[/chat-dummy/stream] ERROR: Failed to parse request - {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
 
     def generate_stream():
         try:
             chat_history.append({"role": "user", "content": user_query})
-
-            print(
-                f"[/chat-dummy/stream] Starting Ollama stream with model: {selected_model}"
-            )
             stream = ollama.chat(
                 model=selected_model, messages=chat_history, stream=True
             )
 
-            chunk_count = 0
             for chunk in stream:
                 if "message" in chunk and "content" in chunk["message"]:
                     content = chunk["message"]["content"]
-                    chunk_count += 1
                     yield f"data: {json.dumps({'content': content})}\n\n"
 
-            print(
-                f"[/chat-dummy/stream] Streaming completed. Total chunks: {chunk_count}"
-            )
             yield "data: [DONE]\n\n"
 
         except ollama.ResponseError as e:
-            print(f"[/chat-dummy/stream] ERROR: Ollama error - {str(e)}")
             error_data = json.dumps({"error": f"Ollama error: {str(e)}"})
             yield f"data: {error_data}\n\n"
         except Exception as e:
-            print(
-                f"[/chat-dummy/stream] ERROR: Unexpected error during streaming - {str(e)}"
-            )
             error_data = json.dumps({"error": f"Internal server error: {str(e)}"})
             yield f"data: {error_data}\n\n"
 
@@ -132,9 +110,6 @@ async def handle_rag_request_toy_stream(request: Request):
             },
         )
     except Exception as e:
-        print(
-            f"[/chat-dummy/stream] ERROR: Failed to create streaming response - {str(e)}"
-        )
         raise HTTPException(status_code=500, detail=str(e))
 
 
