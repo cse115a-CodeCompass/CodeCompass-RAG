@@ -1,9 +1,10 @@
 """ """
 
 import os
+import shutil
 
 from fastapi import APIRouter, HTTPException
-from git import Repo
+from git import GitCommandError, Repo
 from pydantic import BaseModel
 
 from services.github_app import github_app
@@ -68,13 +69,49 @@ async def index_repo(body: IndexRequest):
                 "branch": branch,
                 "temp_dir": temp_dir,
             }
+        except GitCommandError as git_error:
+            # Clean up temp directory on failure
+            if os.path.exists(temp_dir):
+                shutil.rmtree(temp_dir)
+
+            # Check for specific git errors
+            error_message = (
+                str(git_error.stderr) if git_error.stderr else str(git_error)
+            )
+
+            if (
+                "repository not found" in error_message.lower()
+                or "not found" in error_message.lower()
+            ):
+                raise HTTPException(
+                    status_code=404, detail=f"Repository not found: {url}"
+                )
+            elif (
+                "invalid username or password" in error_message.lower()
+                or "authentication failed" in error_message.lower()
+            ):
+                raise HTTPException(
+                    status_code=401,
+                    detail="Authentication failed. Invalid installation token.",
+                )
+            elif "not a git repository" in error_message.lower():
+                raise HTTPException(
+                    status_code=400, detail=f"Invalid repository URL: {url}"
+                )
+            else:
+                raise HTTPException(
+                    status_code=500, detail=f"Git clone failed: {error_message}"
+                )
         except Exception as clone_error:
             # Clean up temp directory on failure
             if os.path.exists(temp_dir):
-                import shutil
-
                 shutil.rmtree(temp_dir)
-            raise clone_error
+            raise HTTPException(
+                status_code=500, detail=f"Indexing failed: {str(clone_error)}"
+            )
 
+    except HTTPException:
+        # Re-raise HTTP exceptions as-is
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Indexing failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Indexing failed: {str(e)}")
