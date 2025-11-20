@@ -3,7 +3,7 @@
 import os
 import shutil
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from git import GitCommandError, Repo
 from pydantic import BaseModel
 
@@ -19,16 +19,18 @@ class IndexRequest(BaseModel):
 
 
 @router.post("/repos/index")
-async def index_repo(body: IndexRequest):
+async def index_repo(request: Request):
     """
     Index a repository - clone and process it for RAG
 
     Receives pre-validated repo info from Next.js API routes with GitHub App auth
     """
     try:
-        url = body.repo_url
-        installation_id = body.installation_id
-        branch = body.branch
+        body = await request.json()
+
+        url = body.get("repo_url")
+        installation_id = body.get("installation_id")
+        branch = body.get("branch")
 
         # TODO: Implement actual indexing logic
         # This would typically:
