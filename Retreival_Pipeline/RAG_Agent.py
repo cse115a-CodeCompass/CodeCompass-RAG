@@ -11,7 +11,8 @@
             
     - It receives `query`, `chat_history` & ``
     
-    
+    - An “orchestrator agent” in a RAG system is usually just a normal LLM that has tool-calling abilities.
+
 
 
     
