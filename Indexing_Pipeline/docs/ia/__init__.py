@@ -5,20 +5,20 @@ This package provides tools for generating structured wiki page hierarchies
 using LLMs, based on module summaries and code graph structure.
 """
 
-from docs.ia.page_spec import (
-    PageSpec,
+from .ia_generator import (
+    generate_global_ia,
+    generate_ia,
+    generate_module_subpages,
+)
+from .page_spec import (
     PageKind,
+    PageSpec,
     WikiIA,
     create_page,
 )
-from docs.ia.ia_generator import (
-    generate_ia,
-    generate_global_ia,
-    generate_module_subpages,
-)
-from docs.ia.scope_computer import (
-    compute_page_scope,
+from .scope_computer import (
     compute_all_scopes,
+    compute_page_scope,
     validate_coverage,
 )
 

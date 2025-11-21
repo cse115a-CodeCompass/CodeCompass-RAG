@@ -7,28 +7,81 @@ using Tree-sitter and typescript-language-server LSP.
 Handles both TypeScript (.ts, .tsx) and JavaScript (.js, .jsx) files.
 """
 
-from pathlib import Path
-from bisect import bisect_right
-from typing import List, Tuple
-from tree_sitter import Language as TS_Language, Parser, Query, QueryCursor
-import tree_sitter_typescript
-import re
 import platform
+import re
 import shutil
+from bisect import bisect_right
+from pathlib import Path
+from typing import List, Tuple
 
-from languages.language_handler import LanguageHandler
-from core.graph_model import Node, NodeLabel
+import tree_sitter_typescript
+from tree_sitter import Language as TS_Language
+from tree_sitter import Parser, Query, QueryCursor
 
+from Indexing_Pipeline.core.graph_model import Node, NodeLabel
+from Indexing_Pipeline.languages.language_handler import LanguageHandler
 
 # JavaScript/TypeScript keywords for identifier filtering
 JS_TS_KEYWORDS = {
-    "break", "case", "catch", "class", "const", "continue", "debugger", "default",
-    "delete", "do", "else", "enum", "export", "extends", "false", "finally", "for",
-    "function", "if", "import", "in", "instanceof", "new", "null", "return", "super",
-    "switch", "this", "throw", "true", "try", "typeof", "var", "void", "while", "with",
-    "let", "static", "implements", "interface", "package", "private", "protected",
-    "public", "yield", "async", "await", "type", "namespace", "declare", "abstract",
-    "as", "from", "get", "set", "readonly", "require", "module", "exports",
+    "break",
+    "case",
+    "catch",
+    "class",
+    "const",
+    "continue",
+    "debugger",
+    "default",
+    "delete",
+    "do",
+    "else",
+    "enum",
+    "export",
+    "extends",
+    "false",
+    "finally",
+    "for",
+    "function",
+    "if",
+    "import",
+    "in",
+    "instanceof",
+    "new",
+    "null",
+    "return",
+    "super",
+    "switch",
+    "this",
+    "throw",
+    "true",
+    "try",
+    "typeof",
+    "var",
+    "void",
+    "while",
+    "with",
+    "let",
+    "static",
+    "implements",
+    "interface",
+    "package",
+    "private",
+    "protected",
+    "public",
+    "yield",
+    "async",
+    "await",
+    "type",
+    "namespace",
+    "declare",
+    "abstract",
+    "as",
+    "from",
+    "get",
+    "set",
+    "readonly",
+    "require",
+    "module",
+    "exports",
 }
 
 IDENT = re.compile(r"[A-Za-z_$][A-Za-z0-9_$]*")
@@ -46,12 +99,12 @@ class TypeScriptHandler(LanguageHandler):
         self.tsx_parser = Parser(self.tsx_language)
 
     def get_file_extensions(self) -> List[str]:
-        return ['.ts', '.tsx', '.js', '.jsx']
+        return [".ts", ".tsx", ".js", ".jsx"]
 
     def _get_parser_for_file(self, file_path: str) -> Parser:
         """Select appropriate parser based on file extension"""
         ext = Path(file_path).suffix.lower()
-        if ext in {'.tsx', '.jsx'}:
+        if ext in {".tsx", ".jsx"}:
             return self.tsx_parser
         return self.ts_parser
 
@@ -73,12 +126,12 @@ class TypeScriptHandler(LanguageHandler):
             List of Node objects with accurate line ranges
         """
         parser = self._get_parser_for_file(file_path)
-        tree = parser.parse(source_code.encode('utf-8'))
+        tree = parser.parse(source_code.encode("utf-8"))
         root = tree.root_node
-        code_bytes = source_code.encode('utf-8')
+        code_bytes = source_code.encode("utf-8")
 
         def text(node):
-            return code_bytes[node.start_byte:node.end_byte].decode('utf-8')
+            return code_bytes[node.start_byte : node.end_byte].decode("utf-8")
 
         def first(x):
             return x[0] if isinstance(x, list) else x
@@ -91,7 +144,7 @@ class TypeScriptHandler(LanguageHandler):
             return starts
 
         def byte_to_char_index(byte_idx: int) -> int:
-            return len(code_bytes[:byte_idx].decode('utf-8'))
+            return len(code_bytes[:byte_idx].decode("utf-8"))
 
         line_starts = char_to_line_indices(source_code)
         # Use resolved filesystem path (consistent with FILE nodes in code_indexing.py)
@@ -100,7 +153,11 @@ class TypeScriptHandler(LanguageHandler):
         # Compute repo-relative path for stable node IDs
         if self.repo_root:
             try:
-                rel_path = Path(file_path).resolve().relative_to(Path(self.repo_root).resolve())
+                rel_path = (
+                    Path(file_path)
+                    .resolve()
+                    .relative_to(Path(self.repo_root).resolve())
+                )
                 rel_path_str = str(rel_path).replace("\\", "/")
             except ValueError:
                 # File outside repo - use basename as fallback
@@ -110,17 +167,22 @@ class TypeScriptHandler(LanguageHandler):
             rel_path_str = Path(file_path).name
 
         # Query for classes with methods
-        q_methods = Query(self.ts_language, r"""
+        q_methods = Query(
+            self.ts_language,
+            r"""
         (class_declaration
           name: (type_identifier) @class.name
           body: (class_body
             (method_definition
               name: (property_identifier) @method.name) @method.def
           )) @class.def
-        """)
+        """,
+        )
 
         # Query for top-level functions
-        q_functions = Query(self.ts_language, r"""
+        q_functions = Query(
+            self.ts_language,
+            r"""
         [
           (function_declaration
             name: (identifier) @func.name) @func.def
@@ -128,15 +190,19 @@ class TypeScriptHandler(LanguageHandler):
             declaration: (function_declaration
               name: (identifier) @func.name) @func.def)
         ]
-        """)
+        """,
+        )
 
         # Query for arrow functions (const foo = () => {})
-        q_arrow_functions = Query(self.ts_language, r"""
+        q_arrow_functions = Query(
+            self.ts_language,
+            r"""
         (lexical_declaration
           (variable_declarator
             name: (identifier) @func.name
             value: (arrow_function) @func.def))
-        """)
+        """,
+        )
 
         nodes: List[Node] = []
 
@@ -162,21 +228,26 @@ class TypeScriptHandler(LanguageHandler):
             cls_name = text(cls_name_node)
 
             c_start_b, c_end_b = cls_def_node.start_byte, cls_def_node.end_byte
-            c_start_c, c_end_c = byte_to_char_index(c_start_b), byte_to_char_index(c_end_b)
+            c_start_c, c_end_c = (
+                byte_to_char_index(c_start_b),
+                byte_to_char_index(c_end_b),
+            )
             # Store 0-indexed line numbers (subtract 1 from bisect_right which returns 1-indexed)
             c_start_line = bisect_right(line_starts, c_start_c) - 1
             c_end_line = bisect_right(line_starts, max(0, c_end_c - 1)) - 1
 
             class_id = def_id(NodeLabel.CLASS, cls_name)
             if class_id not in have_class:
-                nodes.append(Node(
-                    id=class_id,
-                    label=NodeLabel.CLASS,
-                    path=resolved_path,
-                    name=cls_name,
-                    start_line=c_start_line,
-                    end_line=c_end_line,
-                ))
+                nodes.append(
+                    Node(
+                        id=class_id,
+                        label=NodeLabel.CLASS,
+                        path=resolved_path,
+                        name=cls_name,
+                        start_line=c_start_line,
+                        end_line=c_end_line,
+                    )
+                )
                 have_class.add(class_id)
 
             # Method captures
@@ -191,21 +262,26 @@ class TypeScriptHandler(LanguageHandler):
                 m_name = text(name_node)
 
                 m_start_b, m_end_b = def_node.start_byte, def_node.end_byte
-                m_start_c, m_end_c = byte_to_char_index(m_start_b), byte_to_char_index(m_end_b)
+                m_start_c, m_end_c = (
+                    byte_to_char_index(m_start_b),
+                    byte_to_char_index(m_end_b),
+                )
                 # Store 0-indexed line numbers
                 m_start_line = bisect_right(line_starts, m_start_c) - 1
                 m_end_line = bisect_right(line_starts, max(0, m_end_c - 1)) - 1
 
                 method_id = def_id(NodeLabel.METHOD, m_name, class_name=cls_name)
-                nodes.append(Node(
-                    id=method_id,
-                    label=NodeLabel.METHOD,
-                    path=resolved_path,
-                    name=m_name,
-                    start_line=m_start_line,
-                    end_line=m_end_line,
-                    extra={"class": cls_name},
-                ))
+                nodes.append(
+                    Node(
+                        id=method_id,
+                        label=NodeLabel.METHOD,
+                        path=resolved_path,
+                        name=m_name,
+                        start_line=m_start_line,
+                        end_line=m_end_line,
+                        extra={"class": cls_name},
+                    )
+                )
 
         # Extract top-level functions
         cursor = QueryCursor(q_functions)
@@ -215,21 +291,26 @@ class TypeScriptHandler(LanguageHandler):
 
             f_name = text(func_name_node)
             f_start_b, f_end_b = def_node.start_byte, def_node.end_byte
-            f_start_c, f_end_c = byte_to_char_index(f_start_b), byte_to_char_index(f_end_b)
+            f_start_c, f_end_c = (
+                byte_to_char_index(f_start_b),
+                byte_to_char_index(f_end_b),
+            )
             # Store 0-indexed line numbers
             f_start_line = bisect_right(line_starts, f_start_c) - 1
             f_end_line = bisect_right(line_starts, max(0, f_end_c - 1)) - 1
 
             func_id = def_id(NodeLabel.FUNCTION, f_name)
             if func_id not in have_function:
-                nodes.append(Node(
-                    id=func_id,
-                    label=NodeLabel.FUNCTION,
-                    path=resolved_path,
-                    name=f_name,
-                    start_line=f_start_line,
-                    end_line=f_end_line,
-                ))
+                nodes.append(
+                    Node(
+                        id=func_id,
+                        label=NodeLabel.FUNCTION,
+                        path=resolved_path,
+                        name=f_name,
+                        start_line=f_start_line,
+                        end_line=f_end_line,
+                    )
+                )
                 have_function.add(func_id)
 
         # Extract arrow functions
@@ -240,21 +321,26 @@ class TypeScriptHandler(LanguageHandler):
 
             f_name = text(func_name_node)
             f_start_b, f_end_b = def_node.start_byte, def_node.end_byte
-            f_start_c, f_end_c = byte_to_char_index(f_start_b), byte_to_char_index(f_end_b)
+            f_start_c, f_end_c = (
+                byte_to_char_index(f_start_b),
+                byte_to_char_index(f_end_b),
+            )
             # Store 0-indexed line numbers
             f_start_line = bisect_right(line_starts, f_start_c) - 1
             f_end_line = bisect_right(line_starts, max(0, f_end_c - 1)) - 1
 
             func_id = def_id(NodeLabel.FUNCTION, f_name)
             if func_id not in have_function:
-                nodes.append(Node(
-                    id=func_id,
-                    label=NodeLabel.FUNCTION,
-                    path=resolved_path,
-                    name=f_name,
-                    start_line=f_start_line,
-                    end_line=f_end_line,
-                ))
+                nodes.append(
+                    Node(
+                        id=func_id,
+                        label=NodeLabel.FUNCTION,
+                        path=resolved_path,
+                        name=f_name,
+                        start_line=f_start_line,
+                        end_line=f_end_line,
+                    )
+                )
                 have_function.add(func_id)
 
         return nodes
@@ -262,18 +348,20 @@ class TypeScriptHandler(LanguageHandler):
     def get_lsp_server_command(self) -> List[str]:
         """Return command to launch typescript-language-server"""
         # On Windows, npm creates .cmd wrappers
-        if platform.system() == 'Windows':
+        if platform.system() == "Windows":
             # Try .cmd first (npm wrapper), then plain name
-            cmd = shutil.which('typescript-language-server.cmd') or shutil.which('typescript-language-server')
+            cmd = shutil.which("typescript-language-server.cmd") or shutil.which(
+                "typescript-language-server"
+            )
         else:
-            cmd = shutil.which('typescript-language-server')
+            cmd = shutil.which("typescript-language-server")
 
         if not cmd:
             raise FileNotFoundError(
                 "typescript-language-server not found. Install with: npm install -g typescript-language-server typescript"
             )
 
-        return [cmd, '--stdio']
+        return [cmd, "--stdio"]
 
     def get_lsp_language_id(self) -> str:
         """
@@ -282,13 +370,10 @@ class TypeScriptHandler(LanguageHandler):
         Note: TypeScript LSP server handles both 'typescript' and 'javascript'.
         We return 'typescript' as the primary identifier.
         """
-        return 'typescript'
+        return "typescript"
 
     def collect_identifiers(
-        self,
-        source_code: str,
-        start_line: int,
-        end_line: int
+        self, source_code: str, start_line: int, end_line: int
     ) -> List[Tuple[str, int, int]]:
         """
         Extract identifiers from a TypeScript/JavaScript code range for LSP queries.
@@ -304,14 +389,14 @@ class TypeScriptHandler(LanguageHandler):
         Returns:
             List of (identifier_name, line, column) tuples
         """
-        tree = self.parser.parse(source_code.encode('utf-8'))
+        tree = self.parser.parse(source_code.encode("utf-8"))
         root = tree.root_node
-        code_bytes = source_code.encode('utf-8')
+        code_bytes = source_code.encode("utf-8")
 
         # Build line starts (byte positions where each line begins)
         line_starts = [0]
         for i, byte in enumerate(code_bytes):
-            if byte == ord('\n'):
+            if byte == ord("\n"):
                 line_starts.append(i + 1)
 
         out: List[Tuple[str, int, int]] = []
@@ -319,7 +404,7 @@ class TypeScriptHandler(LanguageHandler):
 
         def traverse(node):
             # Only process identifier nodes
-            if node.type == 'identifier':
+            if node.type == "identifier":
                 # Check if this identifier is in a call position
                 is_call = False
                 parent = node.parent
@@ -327,19 +412,19 @@ class TypeScriptHandler(LanguageHandler):
                 if parent:
                     # Case 1: Direct function call - func()
                     # AST: call_expression(function: identifier)
-                    if parent.type == 'call_expression':
-                        func_node = parent.child_by_field_name('function')
+                    if parent.type == "call_expression":
+                        func_node = parent.child_by_field_name("function")
                         if func_node == node:
                             is_call = True
 
                     # Case 2: Method call - obj.method()
                     # AST: call_expression(function: member_expression(property: identifier))
-                    elif parent.type == 'member_expression':
-                        prop_node = parent.child_by_field_name('property')
+                    elif parent.type == "member_expression":
+                        prop_node = parent.child_by_field_name("property")
                         if prop_node == node:
                             grandparent = parent.parent
-                            if grandparent and grandparent.type == 'call_expression':
-                                func_node = grandparent.child_by_field_name('function')
+                            if grandparent and grandparent.type == "call_expression":
+                                func_node = grandparent.child_by_field_name("function")
                                 if func_node == parent:
                                     is_call = True
 
@@ -352,13 +437,17 @@ class TypeScriptHandler(LanguageHandler):
 
                 # Check if identifier is within our target range
                 if start_line <= ident_line <= end_line:
-                    name = code_bytes[node.start_byte:node.end_byte].decode('utf-8')
+                    name = code_bytes[node.start_byte : node.end_byte].decode("utf-8")
 
                     # Skip keywords and duplicates
                     if name not in JS_TS_KEYWORDS and name not in seen:
                         seen.add(name)
                         # Calculate column (offset from line start)
-                        line_start_byte = line_starts[ident_line] if ident_line < len(line_starts) else 0
+                        line_start_byte = (
+                            line_starts[ident_line]
+                            if ident_line < len(line_starts)
+                            else 0
+                        )
                         col = node.start_byte - line_start_byte
                         out.append((name, ident_line, col))
 

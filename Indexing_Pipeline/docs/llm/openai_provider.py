@@ -2,13 +2,14 @@
 OpenAI provider implementation with async support and rate limiting.
 """
 
-import os
 import asyncio
+import os
 from typing import Optional
-from openai import AsyncOpenAI
-from dotenv import load_dotenv
 
-from docs.llm.providers import LLMProvider, SummaryResult
+from dotenv import load_dotenv
+from openai import AsyncOpenAI
+
+from .providers import LLMProvider, SummaryResult
 
 
 class OpenAIProvider(LLMProvider):
@@ -23,7 +24,7 @@ class OpenAIProvider(LLMProvider):
         api_key: Optional[str] = None,
         model: str = "gpt-4o-mini",
         max_concurrent: int = 10,
-        temperature: float = 0.3
+        temperature: float = 0.3,
     ):
         """
         Initialize OpenAI provider.
@@ -39,7 +40,7 @@ class OpenAIProvider(LLMProvider):
         # Load environment variables from .env file
         load_dotenv()
 
-        self.client = AsyncOpenAI(api_key=api_key or os.getenv('OPENAI_API_KEY'))
+        self.client = AsyncOpenAI(api_key=api_key or os.getenv("OPENAI_API_KEY"))
         self.model = model
         self.temperature = temperature
         self.semaphore = asyncio.Semaphore(max_concurrent)
@@ -49,7 +50,7 @@ class OpenAIProvider(LLMProvider):
         system_prompt: str,
         user_prompt: str,
         max_tokens: int = 300,
-        max_retries: int = 3
+        max_retries: int = 3,
     ) -> Optional[str]:
         """
         Call OpenAI API with retry logic and rate limiting.
@@ -70,10 +71,10 @@ class OpenAIProvider(LLMProvider):
                         model=self.model,
                         messages=[
                             {"role": "system", "content": system_prompt},
-                            {"role": "user", "content": user_prompt}
+                            {"role": "user", "content": user_prompt},
                         ],
                         temperature=self.temperature,
-                        max_tokens=max_tokens
+                        max_tokens=max_tokens,
                     )
 
                     content = response.choices[0].message.content
@@ -86,7 +87,7 @@ class OpenAIProvider(LLMProvider):
                     if "rate_limit" in error_str.lower() or "429" in error_str:
                         if attempt < max_retries - 1:
                             # Exponential backoff: 1s, 2s, 4s
-                            wait_time = 2 ** attempt
+                            wait_time = 2**attempt
                             await asyncio.sleep(wait_time)
                             continue
 
@@ -96,11 +97,7 @@ class OpenAIProvider(LLMProvider):
             return None
 
     async def summarize_definition(
-        self,
-        code: str,
-        definition_type: str,
-        name: str,
-        include_detailed: bool = False
+        self, code: str, definition_type: str, name: str, include_detailed: bool = False
     ) -> SummaryResult:
         """
         Generate summary for a function or method definition.
@@ -143,7 +140,7 @@ DETAILED: <detailed summary>"""
 
             # Parse response
             try:
-                lines = response.split('\n', 1)
+                lines = response.split("\n", 1)
                 short_line = lines[0] if lines else ""
                 detailed_line = lines[1] if len(lines) > 1 else ""
 
@@ -152,12 +149,12 @@ DETAILED: <detailed summary>"""
 
                 if short and detailed:
                     return SummaryResult(
-                        success=True,
-                        summary_short=short,
-                        summary_detailed=detailed
+                        success=True, summary_short=short, summary_detailed=detailed
                     )
                 else:
-                    return SummaryResult(success=False, error="Failed to parse response")
+                    return SummaryResult(
+                        success=False, error="Failed to parse response"
+                    )
 
             except Exception as e:
                 return SummaryResult(success=False, error=f"Parse error: {str(e)}")
@@ -185,17 +182,13 @@ Guidelines:
 
             if response:
                 return SummaryResult(
-                    success=True,
-                    summary_short=response,
-                    summary_detailed=None
+                    success=True, summary_short=response, summary_detailed=None
                 )
             else:
                 return SummaryResult(success=False, error="API call failed")
 
     async def summarize_class(
-        self,
-        class_representation: str,
-        class_name: str
+        self, class_representation: str, class_name: str
     ) -> SummaryResult:
         """
         Generate summary for a class using its method summaries.
@@ -230,9 +223,7 @@ Guidelines:
             return SummaryResult(success=False, error="API call failed")
 
     async def summarize_file(
-        self,
-        file_representation: str,
-        file_name: str
+        self, file_representation: str, file_name: str
     ) -> SummaryResult:
         """
         Generate summary for a file using its class/function summaries.
@@ -270,9 +261,7 @@ Guidelines:
             return SummaryResult(success=False, error="API call failed")
 
     async def summarize_module(
-        self,
-        module_representation: str,
-        module_name: str
+        self, module_representation: str, module_name: str
     ) -> SummaryResult:
         """
         Generate summary for a module using its file summaries.
@@ -333,10 +322,7 @@ Guidelines:
             return SummaryResult(success=False, error="API call failed")
 
     async def generate_text(
-        self,
-        system_prompt: str,
-        user_prompt: str,
-        temperature: float = 0.3
+        self, system_prompt: str, user_prompt: str, temperature: float = 0.3
     ) -> tuple[bool, Optional[str], Optional[str]]:
         """
         Generate text using a custom prompt (for non-summarization tasks like IA generation).
@@ -355,10 +341,10 @@ Guidelines:
                     model=self.model,
                     messages=[
                         {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": user_prompt}
+                        {"role": "user", "content": user_prompt},
                     ],
                     temperature=temperature,
-                    max_tokens=2000  # Larger for IA generation (JSON output)
+                    max_tokens=2000,  # Larger for IA generation (JSON output)
                 )
                 content = response.choices[0].message.content
                 if content:

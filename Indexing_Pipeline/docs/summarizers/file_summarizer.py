@@ -11,18 +11,20 @@ This provides high-level context about what the file contains and its purpose.
 Supports both sync (legacy) and async (concurrent) execution with pluggable LLM providers.
 """
 
-import os
 import asyncio
+import os
 from typing import List, Optional
 
 from openai import OpenAI
 
-from core.graph_model import Graph, Node, NodeLabel, EdgeType
-from docs.llm.providers import LLMProvider
-from docs.llm.async_executor import async_batch_process_with_tracking
+from Indexing_Pipeline.core.graph_model import EdgeType, Graph, Node, NodeLabel
+from Indexing_Pipeline.docs.llm.async_executor import async_batch_process_with_tracking
+from Indexing_Pipeline.docs.llm.providers import LLMProvider
 
 
-def _get_file_definitions(file_node: Node, graph: Graph) -> tuple[List[Node], List[Node]]:
+def _get_file_definitions(
+    file_node: Node, graph: Graph
+) -> tuple[List[Node], List[Node]]:
     """
     Collect all CLASS and FUNCTION nodes contained by a file.
 
@@ -49,7 +51,9 @@ def _get_file_definitions(file_node: Node, graph: Graph) -> tuple[List[Node], Li
     return class_nodes, function_nodes
 
 
-def _build_file_representation(file_node: Node, classes: List[Node], functions: List[Node]) -> str:
+def _build_file_representation(
+    file_node: Node, classes: List[Node], functions: List[Node]
+) -> str:
     """
     Build compact representation of a file using class/function summaries.
 
@@ -100,7 +104,7 @@ def summarize_file(
     file_node: Node,
     graph: Graph,
     api_key: Optional[str] = None,
-    model: str = "gpt-4o-mini"
+    model: str = "gpt-4o-mini",
 ) -> bool:
     """
     Generate summary for a single file using its classes' and functions' summaries.
@@ -134,7 +138,7 @@ def summarize_file(
     file_repr = _build_file_representation(file_node, classes, functions)
 
     # Initialize OpenAI client
-    client = OpenAI(api_key=api_key or os.getenv('OPENAI_API_KEY'))
+    client = OpenAI(api_key=api_key or os.getenv("OPENAI_API_KEY"))
 
     # Build prompt
     prompt = f"""Analyze this file's contents and describe what this file is responsible for and how it fits into the system.
@@ -152,11 +156,14 @@ Format your response as a single paragraph without any prefix labels."""
         response = client.chat.completions.create(
             model=model,
             messages=[
-                {"role": "system", "content": "You are a technical documentation expert. Generate clear, concise summaries of code files based on their class and function summaries."},
-                {"role": "user", "content": prompt}
+                {
+                    "role": "system",
+                    "content": "You are a technical documentation expert. Generate clear, concise summaries of code files based on their class and function summaries.",
+                },
+                {"role": "user", "content": prompt},
             ],
             temperature=0.3,
-            max_tokens=300
+            max_tokens=300,
         )
 
         content = response.choices[0].message.content
@@ -177,7 +184,7 @@ def summarize_files(
     graph: Graph,
     api_key: Optional[str] = None,
     model: str = "gpt-4o-mini",
-    verbose: bool = True
+    verbose: bool = True,
 ) -> dict:
     """
     Generate summaries for all file nodes in a graph.
@@ -202,17 +209,14 @@ def summarize_files(
         }
     """
     # Collect all file nodes
-    file_nodes = [
-        node for node in graph.nodes.values()
-        if node.label == NodeLabel.FILE
-    ]
+    file_nodes = [node for node in graph.nodes.values() if node.label == NodeLabel.FILE]
 
     stats = {
         "total": len(file_nodes),
         "succeeded": 0,
         "failed": 0,
         "skipped": 0,
-        "missing_definition_summaries": 0
+        "missing_definition_summaries": 0,
     }
 
     for i, file_node in enumerate(file_nodes, 1):
@@ -232,7 +236,9 @@ def summarize_files(
         unsummarized_defs = [d for d in all_definitions if not d.summary_short]
 
         if unsummarized_defs and verbose:
-            print(f"  ⚠ Warning: {len(unsummarized_defs)}/{len(all_definitions)} definitions lack summaries")
+            print(
+                f"  ⚠ Warning: {len(unsummarized_defs)}/{len(all_definitions)} definitions lack summaries"
+            )
             stats["missing_definition_summaries"] += 1
 
         success = summarize_file(file_node, graph, api_key=api_key, model=model)
@@ -240,7 +246,9 @@ def summarize_files(
         if success:
             stats["succeeded"] += 1
             if verbose:
-                print(f"  → Success ({len(classes)} classes, {len(functions)} functions)")
+                print(
+                    f"  → Success ({len(classes)} classes, {len(functions)} functions)"
+                )
         else:
             stats["failed"] += 1
             if verbose:
@@ -252,8 +260,10 @@ def summarize_files(
         print(f"  Succeeded: {stats['succeeded']}")
         print(f"  Failed: {stats['failed']}")
         print(f"  Skipped: {stats['skipped']}")
-        if stats['missing_definition_summaries'] > 0:
-            print(f"  ⚠ Files with unsummarized definitions: {stats['missing_definition_summaries']}")
+        if stats["missing_definition_summaries"] > 0:
+            print(
+                f"  ⚠ Files with unsummarized definitions: {stats['missing_definition_summaries']}"
+            )
 
     return stats
 
@@ -264,9 +274,7 @@ def summarize_files(
 
 
 async def async_summarize_files(
-    graph: Graph,
-    provider: LLMProvider,
-    verbose: bool = True
+    graph: Graph, provider: LLMProvider, verbose: bool = True
 ) -> dict:
     """
     Generate summaries for all file nodes using async provider.
@@ -282,16 +290,15 @@ async def async_summarize_files(
         Dictionary with statistics
     """
     # Collect all file nodes
-    file_nodes = [
-        node for node in graph.nodes.values()
-        if node.label == NodeLabel.FILE
-    ]
+    file_nodes = [node for node in graph.nodes.values() if node.label == NodeLabel.FILE]
 
     if verbose:
         print(f"Found {len(file_nodes)} files to summarize")
 
     # Process function for a single file
-    async def process_node(file_node: Node, index: int, total: int) -> tuple[Optional[bool], str]:
+    async def process_node(
+        file_node: Node, index: int, total: int
+    ) -> tuple[Optional[bool], str]:
         """Process a single file. Returns (success, name)."""
         # Skip if already summarized
         if file_node.summary_short:
@@ -305,19 +312,22 @@ async def async_summarize_files(
         all_definitions = classes + functions
         unsummarized_defs = [d for d in all_definitions if not d.summary_short]
         if unsummarized_defs and verbose:
-            print(f"[{index}/{total}] ⚠ {file_node.name}: {len(unsummarized_defs)}/{len(all_definitions)} definitions lack summaries")
+            print(
+                f"[{index}/{total}] ⚠ {file_node.name}: {len(unsummarized_defs)}/{len(all_definitions)} definitions lack summaries"
+            )
 
         # Call provider
         result = await provider.summarize_file(
-            file_representation=file_repr,
-            file_name=file_node.name
+            file_representation=file_repr, file_name=file_node.name
         )
 
         if result.success and result.summary_short:
             file_node.summary_short = result.summary_short
 
             if verbose:
-                print(f"[{index}/{total}] ✓ {file_node.name} ({len(classes)} classes, {len(functions)} functions)")
+                print(
+                    f"[{index}/{total}] ✓ {file_node.name} ({len(classes)} classes, {len(functions)} functions)"
+                )
 
             return (True, file_node.name)
         else:
@@ -329,19 +339,14 @@ async def async_summarize_files(
 
     # Run batch processing
     stats = await async_batch_process_with_tracking(
-        file_nodes,
-        process_node,
-        verbose=verbose,
-        batch_name="files"
+        file_nodes, process_node, verbose=verbose, batch_name="files"
     )
 
     return stats
 
 
 def async_summarize_files_sync(
-    graph: Graph,
-    provider: LLMProvider,
-    verbose: bool = True
+    graph: Graph, provider: LLMProvider, verbose: bool = True
 ) -> dict:
     """
     Synchronous wrapper for async_summarize_files.
@@ -352,13 +357,15 @@ def async_summarize_files_sync(
         loop = asyncio.get_event_loop()
         if loop.is_running():
             import concurrent.futures
+
             with concurrent.futures.ThreadPoolExecutor() as pool:
                 future = pool.submit(
-                    asyncio.run,
-                    async_summarize_files(graph, provider, verbose)
+                    asyncio.run, async_summarize_files(graph, provider, verbose)
                 )
                 return future.result()
         else:
-            return loop.run_until_complete(async_summarize_files(graph, provider, verbose))
+            return loop.run_until_complete(
+                async_summarize_files(graph, provider, verbose)
+            )
     except RuntimeError:
         return asyncio.run(async_summarize_files(graph, provider, verbose))

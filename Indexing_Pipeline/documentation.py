@@ -21,28 +21,28 @@ import os
 import sys
 from pathlib import Path
 
-from dotenv import load_dotenv, find_dotenv
+from dotenv import find_dotenv, load_dotenv
 
-from core.code_indexing import CodeIndexer
-from core.graph_model import Graph, NodeLabel
-from core.summary_cache import save_summaries, load_summaries
-from languages.python_handler import PythonHandler
-
-# Import async summarizers
-from docs.summarizers.definition_summarizer import async_summarize_definitions
-from docs.summarizers.class_summarizer import async_summarize_classes
-from docs.summarizers.file_summarizer import async_summarize_files
-from docs.summarizers.module_summarizer import async_summarize_modules
-
-# Import IA generation
-from docs.ia.ia_generator import generate_ia
+from .core.code_indexing import CodeIndexer
+from .core.graph_model import Graph, NodeLabel
+from .core.summary_cache import load_summaries, save_summaries
 
 # Import content generation
-from docs.ia.content_generator import generate_page_markdown
-from docs.ia.page_spec import WikiIA
+from .docs.ia.content_generator import generate_page_markdown
+
+# Import IA generation
+from .docs.ia.ia_generator import generate_ia
+from .docs.ia.page_spec import WikiIA
 
 # Import providers
-from docs.llm.openai_provider import OpenAIProvider
+from .docs.llm.openai_provider import OpenAIProvider
+from .docs.summarizers.class_summarizer import async_summarize_classes
+
+# Import async summarizers
+from .docs.summarizers.definition_summarizer import async_summarize_definitions
+from .docs.summarizers.file_summarizer import async_summarize_files
+from .docs.summarizers.module_summarizer import async_summarize_modules
+from .languages.python_handler import PythonHandler
 
 
 def print_phase_header(phase_num: int, phase_name: str):
@@ -58,7 +58,9 @@ def print_section(title: str):
     print("-" * len(title))
 
 
-async def build_knowledge_graph(repo_path: str, graph_cache_path: str, rebuild: bool, verbose: bool) -> Graph:
+async def build_knowledge_graph(
+    repo_path: str, graph_cache_path: str, rebuild: bool, verbose: bool
+) -> Graph:
     """
     Build or load knowledge graph from repository code.
 
@@ -86,10 +88,7 @@ async def build_knowledge_graph(repo_path: str, graph_cache_path: str, rebuild: 
     if verbose:
         print(f"Building knowledge graph from {repo_path}...")
 
-    indexer = CodeIndexer(
-        base_dir=repo_path,
-        handlers=[PythonHandler()]
-    )
+    indexer = CodeIndexer(base_dir=repo_path, handlers=[PythonHandler()])
     graph = indexer.index_directory()
 
     # Count nodes by type
@@ -122,7 +121,7 @@ async def generate_summaries(
     provider: OpenAIProvider,
     repo_path: str,
     fast_mode: bool,
-    verbose: bool
+    verbose: bool,
 ) -> dict:
     """
     Generate AI summaries for all code elements bottom-up.
@@ -157,25 +156,28 @@ async def generate_summaries(
         print("Mode: DETAILED (short + detailed summaries)")
 
     stats = await async_summarize_definitions(
-        graph,
-        provider,
-        verbose=verbose,
-        include_detailed=not fast_mode
+        graph, provider, verbose=verbose, include_detailed=not fast_mode
     )
-    all_stats['definitions'] = stats
-    print(f"  Result: {stats['succeeded']} succeeded, {stats['failed']} failed, {stats['skipped']} skipped")
+    all_stats["definitions"] = stats
+    print(
+        f"  Result: {stats['succeeded']} succeeded, {stats['failed']} failed, {stats['skipped']} skipped"
+    )
 
     # Sprint 2 Task 1: Class summaries
     print_section("Sprint 2 Task 1: Class Summaries")
     stats = await async_summarize_classes(graph, provider, verbose=verbose)
-    all_stats['classes'] = stats
-    print(f"  Result: {stats['succeeded']} succeeded, {stats['failed']} failed, {stats['skipped']} skipped")
+    all_stats["classes"] = stats
+    print(
+        f"  Result: {stats['succeeded']} succeeded, {stats['failed']} failed, {stats['skipped']} skipped"
+    )
 
     # Sprint 2 Task 2: File summaries
     print_section("Sprint 2 Task 2: File Summaries")
     stats = await async_summarize_files(graph, provider, verbose=verbose)
-    all_stats['files'] = stats
-    print(f"  Result: {stats['succeeded']} succeeded, {stats['failed']} failed, {stats['skipped']} skipped")
+    all_stats["files"] = stats
+    print(
+        f"  Result: {stats['succeeded']} succeeded, {stats['failed']} failed, {stats['skipped']} skipped"
+    )
 
     # Sprint 2 Task 3: Module summaries
     print_section("Sprint 2 Task 3: Module Summaries")
@@ -188,10 +190,7 @@ async def generate_summaries(
         from lsp.lsp_edges import add_imports_edges
         from lsp.lsp_manager import LSPManager
 
-        lsp_manager = LSPManager(
-            handlers=[PythonHandler()],
-            root_dir=repo_path
-        )
+        lsp_manager = LSPManager(handlers=[PythonHandler()], root_dir=repo_path)
 
         imports_count = add_imports_edges(graph, lsp_manager)
         if verbose:
@@ -204,8 +203,10 @@ async def generate_summaries(
         print("  Module summaries will not include import architecture")
 
     stats = await async_summarize_modules(graph, provider, verbose=verbose)
-    all_stats['modules'] = stats
-    print(f"  Result: {stats['succeeded']} succeeded, {stats['failed']} failed, {stats['skipped']} skipped")
+    all_stats["modules"] = stats
+    print(
+        f"  Result: {stats['succeeded']} succeeded, {stats['failed']} failed, {stats['skipped']} skipped"
+    )
 
     # Save all summaries to cache
     print_section("Saving Summaries to Cache")
@@ -220,7 +221,7 @@ async def generate_wiki_ia(
     provider: OpenAIProvider,
     repo_path: str,
     no_subpages: bool,
-    verbose: bool
+    verbose: bool,
 ) -> WikiIA:
     """
     Generate wiki information architecture (page structure + node assignments).
@@ -248,7 +249,7 @@ async def generate_wiki_ia(
     if verbose:
         print(f"Loading module summaries from {module_summaries_path}...")
 
-    module_data = json.loads(module_summaries_path.read_text(encoding='utf-8'))
+    module_data = json.loads(module_summaries_path.read_text(encoding="utf-8"))
     module_summaries = module_data.get("summaries", {})
     print(f"  Loaded {len(module_summaries)} module summaries")
 
@@ -275,7 +276,7 @@ async def generate_wiki_ia(
         base_dir=repo_path,
         project_name=project_name,
         generate_subpages=not no_subpages,
-        verbose=verbose
+        verbose=verbose,
     )
 
     # Save IA
@@ -302,7 +303,7 @@ async def generate_wiki_content(
     provider: OpenAIProvider,
     repo_path: str,
     output_dir: str,
-    verbose: bool
+    verbose: bool,
 ) -> dict:
     """
     Generate markdown content for all wiki pages.
@@ -330,7 +331,9 @@ async def generate_wiki_content(
             print(f"  Loaded {loaded_count} node summaries into graph")
     else:
         print(f"WARNING: No summaries found at {node_summaries_path}")
-        print("  Wiki content will be generated without code summaries (may be lower quality)")
+        print(
+            "  Wiki content will be generated without code summaries (may be lower quality)"
+        )
 
     # Create output directory
     output_path = Path(output_dir)
@@ -359,13 +362,13 @@ async def generate_wiki_content(
                 provider=provider,
                 base_dir=repo_path,
                 wiki_ia=ia,  # Pass IA for overview pages
-                verbose=verbose
+                verbose=verbose,
             )
 
             # Save to file
             page_file = output_path / f"{page.slug}.md"
             page_file.parent.mkdir(parents=True, exist_ok=True)
-            page_file.write_text(markdown, encoding='utf-8')
+            page_file.write_text(markdown, encoding="utf-8")
 
             succeeded += 1
 
@@ -374,6 +377,7 @@ async def generate_wiki_content(
             failed += 1
             if verbose:
                 import traceback
+
                 traceback.print_exc()
 
     print(f"\nContent generation complete:")
@@ -402,14 +406,16 @@ def main():
     graph_cache_path = ".codecompass/graph.json"
 
     # OpenAI configuration
-    model = "gpt-4o-mini"  # Model to use (gpt-4o-mini is cheaper, gpt-4o is higher quality)
-    max_concurrent = 10    # Max concurrent LLM requests
+    model = (
+        "gpt-4o-mini"  # Model to use (gpt-4o-mini is cheaper, gpt-4o is higher quality)
+    )
+    max_concurrent = 10  # Max concurrent LLM requests
 
     # Pipeline options
-    rebuild_graph = False   # Force rebuild graph even if cache exists
-    fast_mode = False       # Skip detailed summaries (30-50% faster, lower quality)
-    no_subpages = False     # Skip generating detailed subpages in IA
-    verbose = True          # Print detailed progress information
+    rebuild_graph = False  # Force rebuild graph even if cache exists
+    fast_mode = False  # Skip detailed summaries (30-50% faster, lower quality)
+    no_subpages = False  # Skip generating detailed subpages in IA
+    verbose = True  # Print detailed progress information
 
     # ============================================================================
     # END CONFIGURATION
@@ -422,33 +428,38 @@ def main():
     print(f"Output: {output_dir}")
     print(f"Provider: OpenAI ({model})")
     print(f"Concurrency: {max_concurrent}")
-    print(f"Mode: {'FAST (short summaries only)' if fast_mode else 'DETAILED (short + detailed)'}")
+    print(
+        f"Mode: {'FAST (short summaries only)' if fast_mode else 'DETAILED (short + detailed)'}"
+    )
 
     # Validate environment
-    if not os.getenv('OPENAI_API_KEY'):
+    if not os.getenv("OPENAI_API_KEY"):
         print("\nERROR: OPENAI_API_KEY environment variable not set")
         print("Please set it in your .env file or environment")
         sys.exit(1)
 
     # Initialize provider
-    provider = OpenAIProvider(
-        model=model,
-        max_concurrent=max_concurrent
-    )
+    provider = OpenAIProvider(model=model, max_concurrent=max_concurrent)
 
     async def run_pipeline():
         try:
             # Build/load knowledge graph (automatically caches to graph.json)
-            graph = await build_knowledge_graph(repo_path, graph_cache_path, rebuild_graph, verbose)
+            graph = await build_knowledge_graph(
+                repo_path, graph_cache_path, rebuild_graph, verbose
+            )
 
             # Generate AI summaries
             await generate_summaries(graph, provider, repo_path, fast_mode, verbose)
 
             # Generate wiki information architecture
-            ia = await generate_wiki_ia(graph, provider, repo_path, no_subpages, verbose)
+            ia = await generate_wiki_ia(
+                graph, provider, repo_path, no_subpages, verbose
+            )
 
             # Generate wiki content
-            await generate_wiki_content(graph, ia, provider, repo_path, output_dir, verbose)
+            await generate_wiki_content(
+                graph, ia, provider, repo_path, output_dir, verbose
+            )
 
         finally:
             # Clean up provider

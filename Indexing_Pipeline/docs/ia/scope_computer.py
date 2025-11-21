@@ -5,18 +5,15 @@ Given a PageSpec with modules (e.g., ["pacai/agents"]), compute which graph
 nodes are in scope for that page.
 """
 
-from typing import List, Set, Dict, Any
 from pathlib import Path
+from typing import Any, Dict, List, Set
 
-from core.graph_model import Graph, Node, NodeLabel
-from docs.ia.page_spec import PageSpec, WikiIA
+from Indexing_Pipeline.core.graph_model import Graph, Node, NodeLabel
+from Indexing_Pipeline.docs.ia.page_spec import PageSpec, WikiIA
 
 
 def compute_page_scope(
-    page: PageSpec,
-    graph: Graph,
-    base_dir: str,
-    verbose: bool = False
+    page: PageSpec, graph: Graph, base_dir: str, verbose: bool = False
 ) -> List[str]:
     """
     Compute node IDs in scope for a page based on its module assignments.
@@ -47,7 +44,7 @@ def compute_page_scope(
     for module in page.modules:
         # Module paths are relative to base_dir and may include project structure
         # e.g., "pacai/agents" -> base_path / "pacai/agents"
-        module_path = base_path / module.replace('.', '/')
+        module_path = base_path / module.replace(".", "/")
         module_paths.append(module_path)
 
     # Convert module_paths to relative paths for string matching
@@ -57,7 +54,7 @@ def compute_page_scope(
     for module_path in module_paths:
         try:
             rel = module_path.relative_to(base_path)
-            module_relative_paths.append(str(rel).replace('\\', '/'))
+            module_relative_paths.append(str(rel).replace("\\", "/"))
         except ValueError:
             # module_path not under base_path, skip
             continue
@@ -67,21 +64,24 @@ def compute_page_scope(
     for node in graph.nodes.values():
         if node.label == NodeLabel.FILE:
             # Normalize node path to relative format
-            node_path_str = str(node.path).replace('\\', '/')
+            node_path_str = str(node.path).replace("\\", "/")
 
             # Try both as-is and as relative to base_dir
             node_paths_to_check = [node_path_str]
             if Path(node.path).is_absolute():
                 try:
                     rel = Path(node.path).relative_to(base_path)
-                    node_paths_to_check.append(str(rel).replace('\\', '/'))
+                    node_paths_to_check.append(str(rel).replace("\\", "/"))
                 except ValueError:
                     pass
 
             # Check if this file is under any of the module paths
             for node_check_path in node_paths_to_check:
                 for module_rel_path in module_relative_paths:
-                    if node_check_path.startswith(module_rel_path + '/') or node_check_path == module_rel_path:
+                    if (
+                        node_check_path.startswith(module_rel_path + "/")
+                        or node_check_path == module_rel_path
+                    ):
                         file_nodes.add(node.id)
                         node_ids.add(node.id)
                         break
@@ -90,21 +90,24 @@ def compute_page_scope(
     for node in graph.nodes.values():
         if node.label in {NodeLabel.CLASS, NodeLabel.FUNCTION, NodeLabel.METHOD}:
             # Normalize node path to relative format (now consistent with FILE nodes)
-            node_path_str = str(node.path).replace('\\', '/')
+            node_path_str = str(node.path).replace("\\", "/")
 
             # Try both as-is and as relative to base_dir
             node_paths_to_check = [node_path_str]
             if Path(node.path).is_absolute():
                 try:
                     rel = Path(node.path).relative_to(base_path)
-                    node_paths_to_check.append(str(rel).replace('\\', '/'))
+                    node_paths_to_check.append(str(rel).replace("\\", "/"))
                 except ValueError:
                     pass
 
             # Check if this definition's file is in scope
             for node_check_path in node_paths_to_check:
                 for module_rel_path in module_relative_paths:
-                    if node_check_path.startswith(module_rel_path + '/') or node_check_path == module_rel_path:
+                    if (
+                        node_check_path.startswith(module_rel_path + "/")
+                        or node_check_path == module_rel_path
+                    ):
                         node_ids.add(node.id)
                         break
 
@@ -112,10 +115,7 @@ def compute_page_scope(
 
 
 def compute_all_scopes(
-    ia: WikiIA,
-    graph: Graph,
-    base_dir: str,
-    verbose: bool = False
+    ia: WikiIA, graph: Graph, base_dir: str, verbose: bool = False
 ) -> int:
     """
     Compute node_ids for all pages in the WikiIA.
@@ -144,9 +144,7 @@ def compute_all_scopes(
 
 
 def validate_coverage(
-    ia: WikiIA,
-    graph: Graph,
-    verbose: bool = False
+    ia: WikiIA, graph: Graph, verbose: bool = False
 ) -> Dict[str, Any]:
     """
     Validate that the IA provides good coverage of the codebase.
@@ -175,14 +173,16 @@ def validate_coverage(
 
     # Find all definition nodes in the graph
     all_definition_nodes = {
-        n.id for n in graph.nodes.values()
+        n.id
+        for n in graph.nodes.values()
         if n.label in {NodeLabel.CLASS, NodeLabel.FUNCTION, NodeLabel.METHOD}
     }
 
     # Filter covered_nodes to only include definition nodes (not FILE nodes)
     # node_ids can be: "file:...", "class:...", "method:...", "function:..."
     covered_definition_nodes = {
-        nid for nid in covered_nodes
+        nid
+        for nid in covered_nodes
         if nid.startswith(("class:", "method:", "function:"))
     }
 
@@ -193,17 +193,18 @@ def validate_coverage(
     overlaps = []
     pages = list(page_coverage.items())
     for i, (slug1, nodes1) in enumerate(pages):
-        for slug2, nodes2 in pages[i+1:]:
+        for slug2, nodes2 in pages[i + 1 :]:
             overlap = nodes1 & nodes2
             if overlap:
-                overlaps.append({
-                    "page1": slug1,
-                    "page2": slug2,
-                    "overlap_count": len(overlap)
-                })
+                overlaps.append(
+                    {"page1": slug1, "page2": slug2, "overlap_count": len(overlap)}
+                )
 
-    coverage_pct = (len(covered_definition_nodes) / len(all_definition_nodes) * 100
-                    if all_definition_nodes else 0)
+    coverage_pct = (
+        len(covered_definition_nodes) / len(all_definition_nodes) * 100
+        if all_definition_nodes
+        else 0
+    )
 
     stats = {
         "total_definition_nodes": len(all_definition_nodes),
@@ -211,7 +212,7 @@ def validate_coverage(
         "orphaned_nodes": len(orphaned_nodes),
         "coverage_percentage": coverage_pct,
         "pages_with_scope": sum(1 for nodes in page_coverage.values() if nodes),
-        "overlapping_page_pairs": len(overlaps)
+        "overlapping_page_pairs": len(overlaps),
     }
 
     if verbose:
@@ -231,8 +232,10 @@ def validate_coverage(
         if overlaps:
             print(f"\nOverlapping pages: {len(overlaps)} pairs")
             for overlap in overlaps[:5]:  # Show first 5
-                print(f"  - {overlap['page1']} <-> {overlap['page2']}: "
-                      f"{overlap['overlap_count']} nodes")
+                print(
+                    f"  - {overlap['page1']} <-> {overlap['page2']}: "
+                    f"{overlap['overlap_count']} nodes"
+                )
 
     return stats
 

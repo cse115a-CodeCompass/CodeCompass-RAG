@@ -10,7 +10,7 @@ try:
 except ImportError:
     AsyncClient = None
 
-from docs.llm.providers import LLMProvider, SummaryResult
+from .providers import LLMProvider, SummaryResult
 
 
 class OllamaProvider(LLMProvider):
@@ -26,7 +26,7 @@ class OllamaProvider(LLMProvider):
         model: str = "deepseek-r1",
         host: str = "http://localhost:11434",
         max_concurrent: int = 50,
-        temperature: float = 0.3
+        temperature: float = 0.3,
     ):
         """
         Initialize Ollama provider.
@@ -41,8 +41,7 @@ class OllamaProvider(LLMProvider):
         """
         if AsyncClient is None:
             raise ImportError(
-                "ollama package not installed. "
-                "Install with: pip install ollama"
+                "ollama package not installed. Install with: pip install ollama"
             )
 
         self.client = AsyncClient(host=host)
@@ -51,10 +50,7 @@ class OllamaProvider(LLMProvider):
         self.semaphore = asyncio.Semaphore(max_concurrent)
 
     async def _call_api(
-        self,
-        system_prompt: str,
-        user_prompt: str,
-        max_retries: int = 2
+        self, system_prompt: str, user_prompt: str, max_retries: int = 2
     ) -> Optional[str]:
         """
         Call Ollama API with retry logic.
@@ -74,15 +70,13 @@ class OllamaProvider(LLMProvider):
                         model=self.model,
                         messages=[
                             {"role": "system", "content": system_prompt},
-                            {"role": "user", "content": user_prompt}
+                            {"role": "user", "content": user_prompt},
                         ],
-                        options={
-                            "temperature": self.temperature
-                        }
+                        options={"temperature": self.temperature},
                     )
 
                     # Ollama response format: {'message': {'content': '...'}}
-                    content = response.get('message', {}).get('content')
+                    content = response.get("message", {}).get("content")
                     return content.strip() if content else None
 
                 except Exception as e:
@@ -95,11 +89,7 @@ class OllamaProvider(LLMProvider):
             return None
 
     async def summarize_definition(
-        self,
-        code: str,
-        definition_type: str,
-        name: str,
-        include_detailed: bool = False
+        self, code: str, definition_type: str, name: str, include_detailed: bool = False
     ) -> SummaryResult:
         """
         Generate summary for a function or method definition.
@@ -142,7 +132,7 @@ DETAILED: <detailed summary>"""
 
             # Parse response
             try:
-                lines = response.split('\n', 1)
+                lines = response.split("\n", 1)
                 short_line = lines[0] if lines else ""
                 detailed_line = lines[1] if len(lines) > 1 else ""
 
@@ -151,12 +141,12 @@ DETAILED: <detailed summary>"""
 
                 if short and detailed:
                     return SummaryResult(
-                        success=True,
-                        summary_short=short,
-                        summary_detailed=detailed
+                        success=True, summary_short=short, summary_detailed=detailed
                     )
                 else:
-                    return SummaryResult(success=False, error="Failed to parse response")
+                    return SummaryResult(
+                        success=False, error="Failed to parse response"
+                    )
 
             except Exception as e:
                 return SummaryResult(success=False, error=f"Parse error: {str(e)}")
@@ -184,17 +174,13 @@ Guidelines:
 
             if response:
                 return SummaryResult(
-                    success=True,
-                    summary_short=response,
-                    summary_detailed=None
+                    success=True, summary_short=response, summary_detailed=None
                 )
             else:
                 return SummaryResult(success=False, error="API call failed")
 
     async def summarize_class(
-        self,
-        class_representation: str,
-        class_name: str
+        self, class_representation: str, class_name: str
     ) -> SummaryResult:
         """
         Generate summary for a class using its method summaries.
@@ -229,9 +215,7 @@ Guidelines:
             return SummaryResult(success=False, error="API call failed")
 
     async def summarize_file(
-        self,
-        file_representation: str,
-        file_name: str
+        self, file_representation: str, file_name: str
     ) -> SummaryResult:
         """
         Generate summary for a file using its class/function summaries.
@@ -269,9 +253,7 @@ Guidelines:
             return SummaryResult(success=False, error="API call failed")
 
     async def summarize_module(
-        self,
-        module_representation: str,
-        module_name: str
+        self, module_representation: str, module_name: str
     ) -> SummaryResult:
         """
         Generate summary for a module using its file summaries.
@@ -332,10 +314,7 @@ Guidelines:
             return SummaryResult(success=False, error="API call failed")
 
     async def generate_text(
-        self,
-        system_prompt: str,
-        user_prompt: str,
-        temperature: float = 0.3
+        self, system_prompt: str, user_prompt: str, temperature: float = 0.3
     ) -> tuple[bool, Optional[str], Optional[str]]:
         """
         Generate text using a custom prompt (for non-summarization tasks like IA generation).
@@ -354,16 +333,16 @@ Guidelines:
                     model=self.model,
                     messages=[
                         {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": user_prompt}
+                        {"role": "user", "content": user_prompt},
                     ],
                     options={
                         "temperature": temperature,
-                        "num_predict": 2000  # Larger for IA generation (JSON output)
-                    }
+                        "num_predict": 2000,  # Larger for IA generation (JSON output)
+                    },
                 )
 
                 # Ollama response format: {'message': {'content': '...'}}
-                content = response.get('message', {}).get('content')
+                content = response.get("message", {}).get("content")
                 if content:
                     return (True, content.strip(), None)
                 else:

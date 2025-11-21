@@ -8,17 +8,17 @@ FEATURE_AIDOCUMENTATION2.md.
 Supports both sync (legacy) and async (concurrent) execution with pluggable LLM providers.
 """
 
-import os
 import asyncio
+import os
 from pathlib import Path
 from typing import List, Optional
-from urllib.parse import urlparse, unquote
+from urllib.parse import unquote, urlparse
 
 from openai import OpenAI
 
-from core.graph_model import Graph, Node, NodeLabel
-from docs.llm.providers import LLMProvider
-from docs.llm.async_executor import async_batch_process_with_tracking
+from Indexing_Pipeline.core.graph_model import Graph, Node, NodeLabel
+from Indexing_Pipeline.docs.llm.async_executor import async_batch_process_with_tracking
+from Indexing_Pipeline.docs.llm.providers import LLMProvider
 
 
 def _extract_source_code(node: Node) -> Optional[str]:
@@ -35,12 +35,12 @@ def _extract_source_code(node: Node) -> Optional[str]:
     """
     # Convert file:// URI to filesystem path if needed
     path_str = node.path
-    if path_str.startswith('file://'):
+    if path_str.startswith("file://"):
         parsed = urlparse(path_str)
         # On Windows: file:///C:/path → C:/path
         # On Unix: file:///path → /path
         path_str = unquote(parsed.path)
-        if path_str.startswith('/') and len(path_str) > 2 and path_str[2] == ':':
+        if path_str.startswith("/") and len(path_str) > 2 and path_str[2] == ":":
             # Windows: remove leading slash from /C:/path
             path_str = path_str[1:]
 
@@ -50,7 +50,7 @@ def _extract_source_code(node: Node) -> Optional[str]:
         return None
 
     try:
-        lines = file_path.read_text(encoding='utf-8').splitlines()
+        lines = file_path.read_text(encoding="utf-8").splitlines()
     except Exception:
         return None
 
@@ -64,13 +64,11 @@ def _extract_source_code(node: Node) -> Optional[str]:
     if start < 0 or end > len(lines):
         return None
 
-    return '\n'.join(lines[start:end])
+    return "\n".join(lines[start:end])
 
 
 def summarize_definition(
-    node: Node,
-    api_key: Optional[str] = None,
-    model: str = "gpt-4o-mini"
+    node: Node, api_key: Optional[str] = None, model: str = "gpt-4o-mini"
 ) -> bool:
     """
     Generate summary for a single definition node using LLM.
@@ -105,7 +103,7 @@ def summarize_definition(
         return True
 
     # Initialize OpenAI client
-    client = OpenAI(api_key=api_key or os.getenv('OPENAI_API_KEY'))
+    client = OpenAI(api_key=api_key or os.getenv("OPENAI_API_KEY"))
 
     # Determine node type for prompt
     node_type = node.label.value  # "class", "function", or "method"
@@ -131,11 +129,14 @@ DETAILED: <your 1-2 paragraph detailed summary>"""
         response = client.chat.completions.create(
             model=model,
             messages=[
-                {"role": "system", "content": "You are a technical documentation expert. Generate clear, concise summaries of code definitions."},
-                {"role": "user", "content": prompt}
+                {
+                    "role": "system",
+                    "content": "You are a technical documentation expert. Generate clear, concise summaries of code definitions.",
+                },
+                {"role": "user", "content": prompt},
             ],
             temperature=0.3,  # Lower temperature for more consistent output
-            max_tokens=500
+            max_tokens=500,
         )
 
         content = response.choices[0].message.content
@@ -143,16 +144,20 @@ DETAILED: <your 1-2 paragraph detailed summary>"""
             return False
 
         # Parse response
-        lines = content.strip().split('\n')
+        lines = content.strip().split("\n")
         short_summary = ""
         detailed_summary = ""
 
         for line in lines:
-            if line.startswith('SHORT:'):
+            if line.startswith("SHORT:"):
                 short_summary = line[6:].strip()
-            elif line.startswith('DETAILED:'):
+            elif line.startswith("DETAILED:"):
                 detailed_summary = line[9:].strip()
-            elif short_summary and not line.startswith('SHORT:') and not line.startswith('DETAILED:'):
+            elif (
+                short_summary
+                and not line.startswith("SHORT:")
+                and not line.startswith("DETAILED:")
+            ):
                 # Continue detailed summary across multiple lines
                 if detailed_summary:
                     detailed_summary += " " + line.strip()
@@ -172,7 +177,7 @@ def summarize_definitions(
     graph: Graph,
     api_key: Optional[str] = None,
     model: str = "gpt-4o-mini",
-    verbose: bool = True
+    verbose: bool = True,
 ) -> dict:
     """
     Generate summaries for all method and function nodes in a graph.
@@ -197,20 +202,18 @@ def summarize_definitions(
     """
     # Collect method and function nodes (not classes - Sprint 2)
     definition_nodes = [
-        node for node in graph.nodes.values()
+        node
+        for node in graph.nodes.values()
         if node.label in {NodeLabel.FUNCTION, NodeLabel.METHOD}
     ]
 
-    stats = {
-        "total": len(definition_nodes),
-        "succeeded": 0,
-        "failed": 0,
-        "skipped": 0
-    }
+    stats = {"total": len(definition_nodes), "succeeded": 0, "failed": 0, "skipped": 0}
 
     for i, node in enumerate(definition_nodes, 1):
         if verbose:
-            print(f"[{i}/{stats['total']}] Summarizing {node.label.value} {node.name}...")
+            print(
+                f"[{i}/{stats['total']}] Summarizing {node.label.value} {node.name}..."
+            )
 
         # Skip if already summarized
         if node.summary_short and node.summary_detailed:
@@ -249,7 +252,7 @@ async def async_summarize_definitions(
     graph: Graph,
     provider: LLMProvider,
     verbose: bool = True,
-    include_detailed: bool = False
+    include_detailed: bool = False,
 ) -> dict:
     """
     Generate summaries for all method and function nodes using async provider.
@@ -275,7 +278,8 @@ async def async_summarize_definitions(
     """
     # Collect method and function nodes
     definition_nodes = [
-        node for node in graph.nodes.values()
+        node
+        for node in graph.nodes.values()
         if node.label in {NodeLabel.FUNCTION, NodeLabel.METHOD}
     ]
 
@@ -285,7 +289,9 @@ async def async_summarize_definitions(
             print("Using FAST mode (short summaries only)")
 
     # Process function for a single node
-    async def process_node(node: Node, index: int, total: int) -> tuple[Optional[bool], str]:
+    async def process_node(
+        node: Node, index: int, total: int
+    ) -> tuple[Optional[bool], str]:
         """Process a single node. Returns (success, name)."""
         # Skip if already summarized (check based on what we're generating)
         if include_detailed:
@@ -308,7 +314,7 @@ async def async_summarize_definitions(
             code=source_code,
             definition_type=node.label.value,
             name=node.name,
-            include_detailed=include_detailed
+            include_detailed=include_detailed,
         )
 
         if result.success and result.summary_short:
@@ -317,22 +323,23 @@ async def async_summarize_definitions(
                 node.summary_detailed = result.summary_detailed
 
             if verbose:
-                print(f"[{index}/{total}] ✓ {node.label.value} {node.name} ({node.loc} LOC)")
+                print(
+                    f"[{index}/{total}] ✓ {node.label.value} {node.name} ({node.loc} LOC)"
+                )
 
             return (True, node.name)
         else:
             if verbose:
                 error_msg = result.error or "Unknown error"
-                print(f"[{index}/{total}] ✗ {node.label.value} {node.name}: {error_msg}")
+                print(
+                    f"[{index}/{total}] ✗ {node.label.value} {node.name}: {error_msg}"
+                )
 
             return (False, node.name)
 
     # Run batch processing
     stats = await async_batch_process_with_tracking(
-        definition_nodes,
-        process_node,
-        verbose=verbose,
-        batch_name="definitions"
+        definition_nodes, process_node, verbose=verbose, batch_name="definitions"
     )
 
     return stats
@@ -342,7 +349,7 @@ def async_summarize_definitions_sync(
     graph: Graph,
     provider: LLMProvider,
     verbose: bool = True,
-    include_detailed: bool = False
+    include_detailed: bool = False,
 ) -> dict:
     """
     Synchronous wrapper for async_summarize_definitions.
@@ -364,15 +371,22 @@ def async_summarize_definitions_sync(
         if loop.is_running():
             # We're already in an async context, create new loop in thread
             import concurrent.futures
+
             with concurrent.futures.ThreadPoolExecutor() as pool:
                 future = pool.submit(
                     asyncio.run,
-                    async_summarize_definitions(graph, provider, verbose, include_detailed)
+                    async_summarize_definitions(
+                        graph, provider, verbose, include_detailed
+                    ),
                 )
                 return future.result()
         else:
             # No running loop, run directly
-            return loop.run_until_complete(async_summarize_definitions(graph, provider, verbose, include_detailed))
+            return loop.run_until_complete(
+                async_summarize_definitions(graph, provider, verbose, include_detailed)
+            )
     except RuntimeError:
         # No event loop exists, create one
-        return asyncio.run(async_summarize_definitions(graph, provider, verbose, include_detailed))
+        return asyncio.run(
+            async_summarize_definitions(graph, provider, verbose, include_detailed)
+        )

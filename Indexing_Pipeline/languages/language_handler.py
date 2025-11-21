@@ -8,8 +8,10 @@ to provide Tree-sitter parsing and LSP server configuration.
 
 from abc import ABC, abstractmethod
 from typing import List, Tuple
+
 from tree_sitter import Language, Parser
-from core.graph_model import Node
+
+from Indexing_Pipeline.core.graph_model import Node
 
 
 class LanguageHandler(ABC):
@@ -127,10 +129,7 @@ class LanguageHandler(ABC):
 
     @abstractmethod
     def collect_identifiers(
-        self,
-        source_code: str,
-        start_line: int,
-        end_line: int
+        self, source_code: str, start_line: int, end_line: int
     ) -> List[Tuple[str, int, int]]:
         """
         Extract identifiers from a code range for LSP definition queries.

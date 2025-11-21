@@ -14,17 +14,17 @@ in .codecompass/module_summaries.json rather than in graph nodes.
 Supports both sync (legacy) and async (concurrent) execution with pluggable LLM providers.
 """
 
-import os
-import json
 import asyncio
+import json
+import os
 from pathlib import Path
-from typing import List, Dict, Optional, Any
+from typing import Any, Dict, List, Optional
 
 from openai import OpenAI
 
-from core.graph_model import Graph, Node, NodeLabel, EdgeType
-from docs.llm.providers import LLMProvider
-from docs.llm.async_executor import async_batch_process_with_tracking
+from Indexing_Pipeline.core.graph_model import EdgeType, Graph, Node, NodeLabel
+from Indexing_Pipeline.docs.llm.async_executor import async_batch_process_with_tracking
+from Indexing_Pipeline.docs.llm.providers import LLMProvider
 
 
 def _get_folder_files(folder_node: Node, graph: Graph) -> List[Node]:
@@ -50,7 +50,9 @@ def _get_folder_files(folder_node: Node, graph: Graph) -> List[Node]:
     return file_nodes
 
 
-def _get_folder_submodules(folder_node: Node, graph: Graph, module_summaries: Dict[str, Dict[str, Any]]) -> List[Dict[str, str]]:
+def _get_folder_submodules(
+    folder_node: Node, graph: Graph, module_summaries: Dict[str, Dict[str, Any]]
+) -> List[Dict[str, str]]:
     """
     Collect direct submodule summaries for a folder.
 
@@ -71,10 +73,12 @@ def _get_folder_submodules(folder_node: Node, graph: Graph, module_summaries: Di
             if child_node and child_node.label == NodeLabel.FOLDER:
                 # Check if this submodule has been summarized
                 if child_node.id in module_summaries:
-                    submodules.append({
-                        "name": child_node.name,
-                        "summary": module_summaries[child_node.id]["summary"]
-                    })
+                    submodules.append(
+                        {
+                            "name": child_node.name,
+                            "summary": module_summaries[child_node.id]["summary"],
+                        }
+                    )
 
     return submodules
 
@@ -83,7 +87,7 @@ def _build_module_representation(
     folder_node: Node,
     files: List[Node],
     graph: Graph,
-    submodules: Optional[List[Dict[str, str]]] = None
+    submodules: Optional[List[Dict[str, str]]] = None,
 ) -> str:
     """
     Build compact representation of a module using file summaries, imports, and submodules.
@@ -192,7 +196,7 @@ def summarize_module(
     folder_node: Node,
     graph: Graph,
     api_key: Optional[str] = None,
-    model: str = "gpt-4o-mini"
+    model: str = "gpt-4o-mini",
 ) -> Optional[str]:
     """
     Generate summary for a single module using its files' summaries.
@@ -226,7 +230,7 @@ def summarize_module(
     module_repr = _build_module_representation(folder_node, files, graph)
 
     # Initialize OpenAI client
-    client = OpenAI(api_key=api_key or os.getenv('OPENAI_API_KEY'))
+    client = OpenAI(api_key=api_key or os.getenv("OPENAI_API_KEY"))
 
     # Build prompt
     prompt = f"""Analyze this module's contents and describe this module's role in the project.
@@ -245,11 +249,14 @@ Format your response as a single paragraph without any prefix labels."""
         response = client.chat.completions.create(
             model=model,
             messages=[
-                {"role": "system", "content": "You are a technical documentation expert. Generate clear, comprehensive summaries of code modules/packages based on their file summaries."},
-                {"role": "user", "content": prompt}
+                {
+                    "role": "system",
+                    "content": "You are a technical documentation expert. Generate clear, comprehensive summaries of code modules/packages based on their file summaries.",
+                },
+                {"role": "user", "content": prompt},
             ],
             temperature=0.3,
-            max_tokens=400
+            max_tokens=400,
         )
 
         content = response.choices[0].message.content
@@ -268,7 +275,7 @@ def summarize_modules(
     api_key: Optional[str] = None,
     model: str = "gpt-4o-mini",
     verbose: bool = True,
-    output_path: str = ".codecompass/module_summaries.json"
+    output_path: str = ".codecompass/module_summaries.json",
 ) -> Dict[str, Any]:
     """
     Generate summaries for all folder nodes in a graph.
@@ -307,8 +314,7 @@ def summarize_modules(
     """
     # Collect all folder nodes
     folder_nodes = [
-        node for node in graph.nodes.values()
-        if node.label == NodeLabel.FOLDER
+        node for node in graph.nodes.values() if node.label == NodeLabel.FOLDER
     ]
 
     stats = {
@@ -317,20 +323,24 @@ def summarize_modules(
         "failed": 0,
         "skipped": 0,
         "missing_file_summaries": 0,
-        "summaries": {}
+        "summaries": {},
     }
 
     # Load existing module summaries if they exist
     output_file = Path(output_path)
     if output_file.exists():
         try:
-            existing_data = json.loads(output_file.read_text(encoding='utf-8'))
+            existing_data = json.loads(output_file.read_text(encoding="utf-8"))
             stats["summaries"] = existing_data.get("summaries", {})
             if verbose:
-                print(f"Loaded {len(stats['summaries'])} existing module summaries from cache")
+                print(
+                    f"Loaded {len(stats['summaries'])} existing module summaries from cache"
+                )
         except (json.JSONDecodeError, IOError):
             if verbose:
-                print("Warning: Could not load existing module summaries, starting fresh")
+                print(
+                    "Warning: Could not load existing module summaries, starting fresh"
+                )
 
     for i, folder_node in enumerate(folder_nodes, 1):
         if verbose:
@@ -357,7 +367,9 @@ def summarize_modules(
         unsummarized_files = [f for f in files if not f.summary_short]
 
         if unsummarized_files and verbose:
-            print(f"  ⚠ Warning: {len(unsummarized_files)}/{len(files)} files lack summaries")
+            print(
+                f"  ⚠ Warning: {len(unsummarized_files)}/{len(files)} files lack summaries"
+            )
             stats["missing_file_summaries"] += 1
 
         summary = summarize_module(folder_node, graph, api_key=api_key, model=model)
@@ -368,7 +380,7 @@ def summarize_modules(
                 "name": folder_node.name,
                 "path": folder_node.path,
                 "file_count": len(files),
-                "summary": summary
+                "summary": summary,
             }
             if verbose:
                 print(f"  → Success ({len(files)} files)")
@@ -381,9 +393,9 @@ def summarize_modules(
     output_file.parent.mkdir(parents=True, exist_ok=True)
     output_data = {
         "total_modules": stats["succeeded"] + stats["skipped"],
-        "summaries": stats["summaries"]
+        "summaries": stats["summaries"],
     }
-    output_file.write_text(json.dumps(output_data, indent=2), encoding='utf-8')
+    output_file.write_text(json.dumps(output_data, indent=2), encoding="utf-8")
 
     if verbose:
         print(f"\nModule summarization complete:")
@@ -391,8 +403,10 @@ def summarize_modules(
         print(f"  Succeeded: {stats['succeeded']}")
         print(f"  Failed: {stats['failed']}")
         print(f"  Skipped: {stats['skipped']}")
-        if stats['missing_file_summaries'] > 0:
-            print(f"  ⚠ Modules with unsummarized files: {stats['missing_file_summaries']}")
+        if stats["missing_file_summaries"] > 0:
+            print(
+                f"  ⚠ Modules with unsummarized files: {stats['missing_file_summaries']}"
+            )
         print(f"\nSaved {len(stats['summaries'])} module summaries to {output_path}")
 
     return stats
@@ -407,7 +421,7 @@ async def async_summarize_modules(
     graph: Graph,
     provider: LLMProvider,
     verbose: bool = True,
-    output_path: str = ".codecompass/module_summaries.json"
+    output_path: str = ".codecompass/module_summaries.json",
 ) -> Dict[str, Any]:
     """
     Generate summaries for all folder nodes using async provider.
@@ -428,14 +442,13 @@ async def async_summarize_modules(
     """
     # Collect all folder nodes
     folder_nodes = [
-        node for node in graph.nodes.values()
-        if node.label == NodeLabel.FOLDER
+        node for node in graph.nodes.values() if node.label == NodeLabel.FOLDER
     ]
 
     # Sort by depth (deepest first) so submodules are processed before parents
     # Depth = number of path separators in the path
     def get_depth(node: Node) -> int:
-        return node.path.count('/') + node.path.count('\\')
+        return node.path.count("/") + node.path.count("\\")
 
     folder_nodes.sort(key=get_depth, reverse=True)
 
@@ -445,24 +458,29 @@ async def async_summarize_modules(
         "failed": 0,
         "skipped": 0,
         "missing_file_summaries": 0,
-        "summaries": {}
+        "summaries": {},
     }
 
     # Load existing module summaries if they exist
     output_file = Path(output_path)
     if output_file.exists():
         try:
-            existing_data = json.loads(output_file.read_text(encoding='utf-8'))
+            existing_data = json.loads(output_file.read_text(encoding="utf-8"))
             stats["summaries"] = existing_data.get("summaries", {})
             if verbose:
-                print(f"Loaded {len(stats['summaries'])} existing module summaries from cache")
+                print(
+                    f"Loaded {len(stats['summaries'])} existing module summaries from cache"
+                )
         except (json.JSONDecodeError, IOError):
             if verbose:
-                print("Warning: Could not load existing module summaries, starting fresh")
+                print(
+                    "Warning: Could not load existing module summaries, starting fresh"
+                )
 
     # Group folders by depth level for sequential batch processing
     # This ensures all children are processed before their parents
     from collections import defaultdict
+
     depth_groups = defaultdict(list)
     for node in folder_nodes:
         depth = get_depth(node)
@@ -472,11 +490,15 @@ async def async_summarize_modules(
     depths_sorted = sorted(depth_groups.keys(), reverse=True)
 
     if verbose:
-        print(f"Found {len(folder_nodes)} folders across {len(depths_sorted)} depth levels")
+        print(
+            f"Found {len(folder_nodes)} folders across {len(depths_sorted)} depth levels"
+        )
         print(f"Processing depth levels: {depths_sorted}")
 
     # Process function for a single module
-    async def process_node(folder_node: Node, index: int, total: int) -> tuple[Optional[bool], str]:
+    async def process_node(
+        folder_node: Node, index: int, total: int
+    ) -> tuple[Optional[bool], str]:
         """Process a single module. Returns (success, name)."""
         # Skip if already summarized
         if folder_node.id in stats["summaries"]:
@@ -493,17 +515,20 @@ async def async_summarize_modules(
             return (None, folder_node.name)
 
         # Build module representation with imports and submodules
-        module_repr = _build_module_representation(folder_node, files, graph, submodules)
+        module_repr = _build_module_representation(
+            folder_node, files, graph, submodules
+        )
 
         # Check for unsummarized files
         unsummarized_files = [f for f in files if not f.summary_short]
         if unsummarized_files and verbose:
-            print(f"[{index}/{total}] ⚠ {folder_node.name}: {len(unsummarized_files)}/{len(files)} files lack summaries")
+            print(
+                f"[{index}/{total}] ⚠ {folder_node.name}: {len(unsummarized_files)}/{len(files)} files lack summaries"
+            )
 
         # Call provider
         result = await provider.summarize_module(
-            module_representation=module_repr,
-            module_name=folder_node.name
+            module_representation=module_repr, module_name=folder_node.name
         )
 
         if result.success and result.summary_short:
@@ -512,7 +537,7 @@ async def async_summarize_modules(
                 "path": folder_node.path,
                 "file_count": len(files),
                 "submodule_count": len(submodules),
-                "summary": result.summary_short
+                "summary": result.summary_short,
             }
 
             if verbose:
@@ -536,14 +561,16 @@ async def async_summarize_modules(
         folders_at_depth = depth_groups[depth]
 
         if verbose:
-            print(f"\n--- Processing depth level {depth} ({len(folders_at_depth)} folders) ---")
+            print(
+                f"\n--- Processing depth level {depth} ({len(folders_at_depth)} folders) ---"
+            )
 
         if folders_at_depth:
             batch_stats = await async_batch_process_with_tracking(
                 folders_at_depth,
                 process_node,
                 verbose=verbose,
-                batch_name=f"depth-{depth} modules"
+                batch_name=f"depth-{depth} modules",
             )
 
             # Update cumulative stats
@@ -556,9 +583,9 @@ async def async_summarize_modules(
     output_file.parent.mkdir(parents=True, exist_ok=True)
     output_data = {
         "total_modules": stats["succeeded"] + stats["skipped"],
-        "summaries": stats["summaries"]
+        "summaries": stats["summaries"],
     }
-    output_file.write_text(json.dumps(output_data, indent=2), encoding='utf-8')
+    output_file.write_text(json.dumps(output_data, indent=2), encoding="utf-8")
 
     if verbose:
         print(f"\nSaved {len(stats['summaries'])} module summaries to {output_path}")
@@ -570,7 +597,7 @@ def async_summarize_modules_sync(
     graph: Graph,
     provider: LLMProvider,
     verbose: bool = True,
-    output_path: str = ".codecompass/module_summaries.json"
+    output_path: str = ".codecompass/module_summaries.json",
 ) -> Dict[str, Any]:
     """
     Synchronous wrapper for async_summarize_modules.
@@ -581,13 +608,18 @@ def async_summarize_modules_sync(
         loop = asyncio.get_event_loop()
         if loop.is_running():
             import concurrent.futures
+
             with concurrent.futures.ThreadPoolExecutor() as pool:
                 future = pool.submit(
                     asyncio.run,
-                    async_summarize_modules(graph, provider, verbose, output_path)
+                    async_summarize_modules(graph, provider, verbose, output_path),
                 )
                 return future.result()
         else:
-            return loop.run_until_complete(async_summarize_modules(graph, provider, verbose, output_path))
+            return loop.run_until_complete(
+                async_summarize_modules(graph, provider, verbose, output_path)
+            )
     except RuntimeError:
-        return asyncio.run(async_summarize_modules(graph, provider, verbose, output_path))
+        return asyncio.run(
+            async_summarize_modules(graph, provider, verbose, output_path)
+        )

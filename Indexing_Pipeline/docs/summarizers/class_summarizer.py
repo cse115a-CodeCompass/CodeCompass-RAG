@@ -11,15 +11,15 @@ This scales to large classes with many methods.
 Supports both sync (legacy) and async (concurrent) execution with pluggable LLM providers.
 """
 
-import os
 import asyncio
+import os
 from typing import List, Optional
 
 from openai import OpenAI
 
-from core.graph_model import Graph, Node, NodeLabel, EdgeType
-from docs.llm.providers import LLMProvider
-from docs.llm.async_executor import async_batch_process_with_tracking
+from Indexing_Pipeline.core.graph_model import EdgeType, Graph, Node, NodeLabel
+from Indexing_Pipeline.docs.llm.async_executor import async_batch_process_with_tracking
+from Indexing_Pipeline.docs.llm.providers import LLMProvider
 
 
 def _get_class_methods(class_node: Node, graph: Graph) -> List[Node]:
@@ -79,7 +79,7 @@ def summarize_class(
     class_node: Node,
     graph: Graph,
     api_key: Optional[str] = None,
-    model: str = "gpt-4o-mini"
+    model: str = "gpt-4o-mini",
 ) -> bool:
     """
     Generate summary for a single class using its methods' summaries.
@@ -113,7 +113,7 @@ def summarize_class(
     class_repr = _build_class_representation(class_node, methods)
 
     # Initialize OpenAI client
-    client = OpenAI(api_key=api_key or os.getenv('OPENAI_API_KEY'))
+    client = OpenAI(api_key=api_key or os.getenv("OPENAI_API_KEY"))
 
     # Build prompt
     prompt = f"""Analyze this class and its methods, then describe the class's purpose and responsibilities.
@@ -131,11 +131,14 @@ Format your response as a single paragraph without any prefix labels."""
         response = client.chat.completions.create(
             model=model,
             messages=[
-                {"role": "system", "content": "You are a technical documentation expert. Generate clear, concise summaries of code classes based on their method summaries."},
-                {"role": "user", "content": prompt}
+                {
+                    "role": "system",
+                    "content": "You are a technical documentation expert. Generate clear, concise summaries of code classes based on their method summaries.",
+                },
+                {"role": "user", "content": prompt},
             ],
             temperature=0.3,  # Lower temperature for more consistent output
-            max_tokens=300
+            max_tokens=300,
         )
 
         content = response.choices[0].message.content
@@ -156,7 +159,7 @@ def summarize_classes(
     graph: Graph,
     api_key: Optional[str] = None,
     model: str = "gpt-4o-mini",
-    verbose: bool = True
+    verbose: bool = True,
 ) -> dict:
     """
     Generate summaries for all class nodes in a graph.
@@ -182,8 +185,7 @@ def summarize_classes(
     """
     # Collect all class nodes
     class_nodes = [
-        node for node in graph.nodes.values()
-        if node.label == NodeLabel.CLASS
+        node for node in graph.nodes.values() if node.label == NodeLabel.CLASS
     ]
 
     stats = {
@@ -191,7 +193,7 @@ def summarize_classes(
         "succeeded": 0,
         "failed": 0,
         "skipped": 0,
-        "missing_method_summaries": 0
+        "missing_method_summaries": 0,
     }
 
     for i, class_node in enumerate(class_nodes, 1):
@@ -210,7 +212,9 @@ def summarize_classes(
         unsummarized_methods = [m for m in methods if not m.summary_short]
 
         if unsummarized_methods and verbose:
-            print(f"  ⚠ Warning: {len(unsummarized_methods)}/{len(methods)} methods lack summaries")
+            print(
+                f"  ⚠ Warning: {len(unsummarized_methods)}/{len(methods)} methods lack summaries"
+            )
             # We'll still attempt to summarize, but note this
             stats["missing_method_summaries"] += 1
 
@@ -231,8 +235,10 @@ def summarize_classes(
         print(f"  Succeeded: {stats['succeeded']}")
         print(f"  Failed: {stats['failed']}")
         print(f"  Skipped: {stats['skipped']}")
-        if stats['missing_method_summaries'] > 0:
-            print(f"  ⚠ Classes with unsummarized methods: {stats['missing_method_summaries']}")
+        if stats["missing_method_summaries"] > 0:
+            print(
+                f"  ⚠ Classes with unsummarized methods: {stats['missing_method_summaries']}"
+            )
 
     return stats
 
@@ -243,9 +249,7 @@ def summarize_classes(
 
 
 async def async_summarize_classes(
-    graph: Graph,
-    provider: LLMProvider,
-    verbose: bool = True
+    graph: Graph, provider: LLMProvider, verbose: bool = True
 ) -> dict:
     """
     Generate summaries for all class nodes using async provider.
@@ -262,15 +266,16 @@ async def async_summarize_classes(
     """
     # Collect all class nodes
     class_nodes = [
-        node for node in graph.nodes.values()
-        if node.label == NodeLabel.CLASS
+        node for node in graph.nodes.values() if node.label == NodeLabel.CLASS
     ]
 
     if verbose:
         print(f"Found {len(class_nodes)} classes to summarize")
 
     # Process function for a single class
-    async def process_node(class_node: Node, index: int, total: int) -> tuple[Optional[bool], str]:
+    async def process_node(
+        class_node: Node, index: int, total: int
+    ) -> tuple[Optional[bool], str]:
         """Process a single class. Returns (success, name)."""
         # Skip if already summarized
         if class_node.summary_short:
@@ -283,12 +288,13 @@ async def async_summarize_classes(
         # Check for unsummarized methods
         unsummarized_methods = [m for m in methods if not m.summary_short]
         if unsummarized_methods and verbose:
-            print(f"[{index}/{total}] ⚠ {class_node.name}: {len(unsummarized_methods)}/{len(methods)} methods lack summaries")
+            print(
+                f"[{index}/{total}] ⚠ {class_node.name}: {len(unsummarized_methods)}/{len(methods)} methods lack summaries"
+            )
 
         # Call provider
         result = await provider.summarize_class(
-            class_representation=class_repr,
-            class_name=class_node.name
+            class_representation=class_repr, class_name=class_node.name
         )
 
         if result.success and result.summary_short:
@@ -307,19 +313,14 @@ async def async_summarize_classes(
 
     # Run batch processing
     stats = await async_batch_process_with_tracking(
-        class_nodes,
-        process_node,
-        verbose=verbose,
-        batch_name="classes"
+        class_nodes, process_node, verbose=verbose, batch_name="classes"
     )
 
     return stats
 
 
 def async_summarize_classes_sync(
-    graph: Graph,
-    provider: LLMProvider,
-    verbose: bool = True
+    graph: Graph, provider: LLMProvider, verbose: bool = True
 ) -> dict:
     """
     Synchronous wrapper for async_summarize_classes.
@@ -330,13 +331,15 @@ def async_summarize_classes_sync(
         loop = asyncio.get_event_loop()
         if loop.is_running():
             import concurrent.futures
+
             with concurrent.futures.ThreadPoolExecutor() as pool:
                 future = pool.submit(
-                    asyncio.run,
-                    async_summarize_classes(graph, provider, verbose)
+                    asyncio.run, async_summarize_classes(graph, provider, verbose)
                 )
                 return future.result()
         else:
-            return loop.run_until_complete(async_summarize_classes(graph, provider, verbose))
+            return loop.run_until_complete(
+                async_summarize_classes(graph, provider, verbose)
+            )
     except RuntimeError:
         return asyncio.run(async_summarize_classes(graph, provider, verbose))

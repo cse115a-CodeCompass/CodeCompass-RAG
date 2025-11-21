@@ -7,8 +7,8 @@ To add support for a new language:
 2. Add an instance to the ENABLED_LANGUAGES list below
 """
 
-from languages.python_handler import PythonHandler
-from languages.typescript_handler import TypeScriptHandler
+from Indexing_Pipeline.languages.python_handler import PythonHandler
+from Indexing_Pipeline.languages.typescript_handler import TypeScriptHandler
 
 # List of enabled language handlers
 # Each handler instance provides language-specific parsing and LSP configuration

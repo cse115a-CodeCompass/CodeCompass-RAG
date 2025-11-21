@@ -2,9 +2,9 @@
 LLM provider interfaces and implementations for AI documentation generation.
 """
 
-from docs.llm.providers import LLMProvider, SummaryResult
-from docs.llm.openai_provider import OpenAIProvider
-from docs.llm.ollama_provider import OllamaProvider
+from .ollama_provider import OllamaProvider
+from .openai_provider import OpenAIProvider
+from .providers import LLMProvider, SummaryResult
 
 __all__ = [
     "LLMProvider",
