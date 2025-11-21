@@ -53,7 +53,7 @@ ex.txt
 nul
 
 # Test/Example Data (keep examples/ as it contains demo files)
-pacai/
+pacai/.venv
 practice/
 
 # Legacy/Experimental Files (not used in current pipeline)

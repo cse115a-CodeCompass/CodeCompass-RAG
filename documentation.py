@@ -27,6 +27,7 @@ from core.code_indexing import CodeIndexer
 from core.graph_model import Graph, NodeLabel
 from core.summary_cache import save_summaries, load_summaries
 from languages.python_handler import PythonHandler
+from languages.typescript_handler import TypeScriptHandler
 
 # Import async summarizers
 from docs.summarizers.definition_summarizer import async_summarize_definitions
@@ -88,7 +89,7 @@ async def build_knowledge_graph(repo_path: str, graph_cache_path: str, rebuild: 
 
     indexer = CodeIndexer(
         base_dir=repo_path,
-        handlers=[PythonHandler()]
+        handlers=[PythonHandler(), TypeScriptHandler()]
     )
     graph = indexer.index_directory()
 
@@ -393,7 +394,7 @@ def main():
     # ============================================================================
 
     # Repository to analyze
-    repo_path = "example_repos/pacai"
+    repo_path = "example_repos/zod"
 
     # Output directory for wiki pages
     output_dir = "./wiki"
