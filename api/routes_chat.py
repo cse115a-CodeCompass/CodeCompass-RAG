@@ -115,6 +115,18 @@ async def handle_rag_request_toy_stream(request: Request):
 
 ######################################################################
 
+@router.post("/chat/available_models")
+async def fetch_available_Ollama_Models():
+    """
+    
+    """
+    try:
+        return
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail="Invalid JSON")
+    except Exception as e:
+        print(f"Error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))    
 
 @router.post("/chat")
 async def handle_rag_request(request: Request):
