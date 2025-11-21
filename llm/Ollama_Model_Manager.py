@@ -1,7 +1,12 @@
 """
+    All The Fucntions you would need to insteact with Ollama(which is a service to host llms locally)
+        - Check if Ollama is installed
+        - Check if Ollam Server is running
+        - Check if a given LLM is installed and available to use
     
-
+    The Backend absolutely cannot work without OLLAMA!!
 """
+
 import subprocess   # allows running system commands(like starting the Ollama Server)
 import time     # provides time related funcs like sleep()
 import socket   # used for network communication, in our case to check if Ollama server is running
