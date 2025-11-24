@@ -1,16 +1,16 @@
 """
 API routes for repository indexing and documentation generation.
 
-Integrates the complete 4-phase CodeCompass pipeline:
+Integrates the complete 5-phase CodeCompass pipeline:
 1. Code Indexing - Build knowledge graph
 2. Summarization - Generate AI summaries
 3. IA Generation - Generate wiki information architecture
 4. Content Generation - Generate markdown wiki pages
+5. Vectorization - Index knowledge graph into ChromaDB for semantic search
 """
 
 import os
 import shutil
-from pathlib import Path
 
 from dotenv import load_dotenv
 from fastapi import APIRouter, HTTPException, Request
@@ -30,6 +30,8 @@ from Indexing_Pipeline.documentation import (
     generate_wiki_ia,
 )
 from services.github_app import github_app
+from services.supabase.create_client import supabase
+from services.supabase.pages_service import insert_wiki_pages
 
 # Load environment variables
 load_dotenv()
@@ -66,12 +68,13 @@ async def index_repo(request: Request):
 
     Receives pre-validated repo info from Next.js API routes with GitHub App auth.
 
-    Runs the complete 4-phase CodeCompass pipeline:
+    Runs the complete 5-phase CodeCompass pipeline:
     1. Clone repository
     2. Build knowledge graph (code indexing)
     3. Generate AI summaries (definitions -> classes -> files -> modules)
     4. Generate wiki information architecture
     5. Generate markdown wiki pages
+    6. Vectorize knowledge graph into ChromaDB for semantic search
     """
     provider = None
 
@@ -79,8 +82,14 @@ async def index_repo(request: Request):
         body = await request.json()
 
         url = body.get("repo_url")
+        user_id = body.get("user_id")
+        repo_id = body.get("repo_id")
         installation_id = body.get("installation_id")
+        latest_version = body.get("version")
         branch = body.get("branch")
+
+        if not url or not user_id or not installation_id or not branch:
+            raise HTTPException(status_code=400, detail="Missing required fields")
 
         # Parse owner and repo from url
         owner, repo = url.split("/")[-2:]
@@ -245,21 +254,238 @@ async def index_repo(request: Request):
                 verbose=VERBOSE,
             )
 
+            # Phase 5: Vectorize knowledge graph
+            vectorization_stats = None
+            try:
+                if VERBOSE:
+                    print("\n" + "=" * 70)
+                    print("PHASE 5: Knowledge Graph Vectorization")
+                    print("=" * 70)
+
+                # Import vectorization modules
+                from Indexing_Pipeline.vectorization.embeddings_config import (
+                    get_embeddings,
+                )
+                from Indexing_Pipeline.vectorization.process_graph import (
+                    index_graph_into_vectors,
+                )
+
+                # Configuration
+                use_local_embeddings = (
+                    False  # Set to True for local nomic-embed-code, False for Voyage AI
+                )
+
+                # Use version-specific collection name and directory
+                collection_name = f"code_graph_v{latest_version}"
+                persist_dir = os.path.join(
+                    codecompass_dir, f"chroma_db_v{latest_version}"
+                )
+
+                # Check for required API key if using Voyage AI
+                if not use_local_embeddings and not os.getenv("VOYAGE_API_KEY"):
+                    print(
+                        "\n⚠️  WARNING: VOYAGE_API_KEY not set, skipping vectorization"
+                    )
+                    print("  Set VOYAGE_API_KEY in .env to enable vector search")
+                    vectorization_stats = {
+                        "status": "skipped",
+                        "reason": "VOYAGE_API_KEY not set",
+                        "vectorized_count": 0,
+                    }
+                else:
+                    if VERBOSE:
+                        embedding_model = (
+                            "nomic-embed-code (local)"
+                            if use_local_embeddings
+                            else "voyage-code-3 (Voyage AI)"
+                        )
+                        print(f"Vectorizing code definitions into {persist_dir}...")
+                        print(f"  Collection name: {collection_name}")
+                        print(f"  Embedding model: {embedding_model}")
+
+                    # Get embeddings configuration
+                    embeddings = get_embeddings(use_local=use_local_embeddings)
+
+                    # Vectorize the graph with version-specific collection
+                    vectorstore = index_graph_into_vectors(
+                        graph, persist_dir=persist_dir, collection_name=collection_name
+                    )
+
+                    # Get statistics
+                    collection = vectorstore._collection
+                    count = collection.count()
+
+                    vectorization_stats = {
+                        "status": "success",
+                        "vectorized_count": count,
+                        "embedding_model": "nomic-embed-code"
+                        if use_local_embeddings
+                        else "voyage-code-3",
+                        "vector_db_path": persist_dir,
+                        "collection_name": collection_name,
+                        "version": latest_version,
+                    }
+
+                    if VERBOSE:
+                        print(f"  ✓ Vectorized {count} code definitions")
+                        print(f"  ✓ Vector database: {persist_dir}")
+
+            except Exception as vec_error:
+                # Log vectorization error but don't fail the pipeline
+                import traceback
+
+                error_trace = traceback.format_exc()
+                error_message = f"Vectorization failed: {str(vec_error)}"
+
+                print(f"\n⚠️  WARNING: {error_message}")
+                if VERBOSE:
+                    print(f"Error trace:\n{error_trace}")
+
+                vectorization_stats = {
+                    "status": "failed",
+                    "error": error_message,
+                    "vectorized_count": 0,
+                }
+
+            # Phase 6: Database operations (wrapped in try-except for graceful error handling)
+            page_insertion_stats = None
+            documentation_id = None
+
+            try:
+                # Update repository status in Supabase
+                if VERBOSE:
+                    print("\n=== Updating repository status in Supabase ===")
+
+                # Update repository status - Supabase raises exceptions on errors
+                response = (
+                    supabase.table("repositories")
+                    .update({"index_status": "indexed"})
+                    .eq("id", repo_id)
+                    .execute()
+                )
+
+                # Insert documentation row into Supabase
+                if VERBOSE:
+                    print("=== Inserting documentation record ===")
+
+                doc_response = (
+                    supabase.table("documentation")
+                    .insert(
+                        {
+                            "repo_id": repo_id,
+                            "title": repo,
+                            "metadata": {
+                                "status": "success",
+                                "message": "Repository indexed and documented successfully",
+                                "repo_url": url,
+                                "branch": branch,
+                                "temp_dir": temp_dir,
+                                "indexing_results": {
+                                    "graph_stats": graph_stats,
+                                    "summarization_stats": summarization_stats,
+                                    "wiki_ia_stats": wiki_ia_stats,
+                                    "content_generation_stats": content_stats,
+                                    "vectorization_stats": vectorization_stats,
+                                    "output_paths": {
+                                        "graph": os.path.join(
+                                            temp_dir, ".codecompass", "graph.json"
+                                        ),
+                                        "summaries": os.path.join(
+                                            temp_dir, ".codecompass", "summaries.json"
+                                        ),
+                                        "module_summaries": os.path.join(
+                                            temp_dir,
+                                            ".codecompass",
+                                            "module_summaries.json",
+                                        ),
+                                        "wiki_ia": os.path.join(
+                                            temp_dir, ".codecompass", "wiki_ia.json"
+                                        ),
+                                        "wiki_content": os.path.join(temp_dir, "wiki/"),
+                                        "vector_db": os.path.join(
+                                            temp_dir, ".codecompass", "chroma_db/"
+                                        ),
+                                    },
+                                },
+                            },
+                            "version": latest_version,
+                        }
+                    )
+                    .execute()
+                )
+
+                # Get the documentation_id from the insert response
+                # Supabase raises exceptions on errors, no need to check doc_response.error
+                documentation_id = (
+                    doc_response.data[0]["id"] if doc_response.data else None
+                )
+                if not documentation_id:
+                    raise Exception("Failed to retrieve documentation_id after insert")
+
+                if VERBOSE:
+                    print(f"✓ Documentation record created with ID: {documentation_id}")
+
+                # Phase 5b: Insert wiki pages into Supabase
+                if VERBOSE:
+                    print("\n=== Inserting wiki pages into Supabase ===")
+
+                from pathlib import Path
+
+                page_insertion_stats = await insert_wiki_pages(
+                    supabase=supabase,
+                    documentation_id=documentation_id,
+                    documentation_version=latest_version,
+                    wiki_ia=ia,
+                    graph=graph,
+                    wiki_dir=Path(wiki_output_dir),
+                    verbose=VERBOSE,
+                )
+
+                if VERBOSE:
+                    print(
+                        f"\n✓ Successfully inserted {page_insertion_stats['successful_inserts']} pages"
+                    )
+
+            except Exception as db_error:
+                # Log the database error but don't fail the entire pipeline
+                import traceback
+
+                error_trace = traceback.format_exc()
+                error_message = f"Database operation failed: {str(db_error)}"
+
+                print(f"\n⚠️  WARNING: {error_message}")
+                if VERBOSE:
+                    print(f"Error trace:\n{error_trace}")
+
+                # Set default values for missing stats
+                if page_insertion_stats is None:
+                    page_insertion_stats = {
+                        "total_pages": 0,
+                        "successful_inserts": 0,
+                        "failed_inserts": 0,
+                        "pages_by_kind": {},
+                        "error": error_message,
+                    }
+
+                # Continue execution - files are still saved locally
+
         finally:
             os.chdir(original_cwd)  # Restore original working directory
 
-        # Return comprehensive results with absolute paths
         return {
             "status": "success",
-            "message": f"Repository indexed and documented successfully",
+            "message": "Repository indexed and documented successfully",
             "repo_url": url,
             "branch": branch,
             "temp_dir": temp_dir,
+            "documentation_id": documentation_id,
             "indexing_results": {
                 "graph_stats": graph_stats,
                 "summarization_stats": summarization_stats,
                 "wiki_ia_stats": wiki_ia_stats,
                 "content_generation_stats": content_stats,
+                "vectorization_stats": vectorization_stats,
+                "page_insertion_stats": page_insertion_stats,
                 "output_paths": {
                     "graph": os.path.join(temp_dir, ".codecompass", "graph.json"),
                     "summaries": os.path.join(
@@ -270,6 +496,7 @@ async def index_repo(request: Request):
                     ),
                     "wiki_ia": os.path.join(temp_dir, ".codecompass", "wiki_ia.json"),
                     "wiki_content": os.path.join(temp_dir, "wiki/"),
+                    "vector_db": os.path.join(temp_dir, ".codecompass", "chroma_db/"),
                 },
             },
         }

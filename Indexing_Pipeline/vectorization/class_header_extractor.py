@@ -16,10 +16,13 @@ For TypeScript/JavaScript:
 
 from pathlib import Path
 from typing import Optional
-from tree_sitter import Language as TS_Language, Parser, Query, QueryCursor
+
 import tree_sitter_python
 import tree_sitter_typescript
-from core.graph_model import Node
+from tree_sitter import Language as TS_Language
+from tree_sitter import Parser, Query, QueryCursor
+
+from Indexing_Pipeline.core.graph_model import Node
 
 
 class ClassHeaderExtractor:
@@ -48,9 +51,9 @@ class ClassHeaderExtractor:
         path = Path(node.path if not node.path.startswith("file://") else node.path[7:])
         ext = path.suffix.lower()
 
-        if ext in {'.py', '.pyi'}:
+        if ext in {".py", ".pyi"}:
             return self._extract_python_header(node, source_code)
-        elif ext in {'.ts', '.tsx', '.js', '.jsx'}:
+        elif ext in {".ts", ".tsx", ".js", ".jsx"}:
             return self._extract_typescript_header(node, source_code)
         else:
             return None
@@ -64,13 +67,15 @@ class ClassHeaderExtractor:
         2. Extract class-level assignments and type annotations (not inside methods)
         3. Extract __init__ method if present
         """
-        tree = self.py_parser.parse(source_code.encode('utf-8'))
+        tree = self.py_parser.parse(source_code.encode("utf-8"))
         root = tree.root_node
-        code_bytes = source_code.encode('utf-8')
+        code_bytes = source_code.encode("utf-8")
 
         # Graph now stores 0-indexed line numbers (consistent with tree-sitter)
         # Find the class node matching our line range
-        class_node = self._find_class_node_python(root, node.start_line or 0, node.end_line or 0)
+        class_node = self._find_class_node_python(
+            root, node.start_line or 0, node.end_line or 0
+        )
         if not class_node:
             # Fallback: return just class signature
             lines = source_code.splitlines()
@@ -82,7 +87,7 @@ class ClassHeaderExtractor:
         # Get class body
         class_body = None
         for child in class_node.children:
-            if child.type == 'block':
+            if child.type == "block":
                 class_body = child
                 break
 
@@ -102,30 +107,42 @@ class ClassHeaderExtractor:
             child_type = child.type
 
             # Class-level expressions (type annotations, assignments, etc.)
-            if child_type == 'expression_statement':
+            if child_type == "expression_statement":
                 # Get the first child (the actual expression)
                 expr = child.children[0] if child.children else None
                 # Include all types of assignments (with or without values)
-                if expr and expr.type in {'assignment', 'annotated_assignment', 'augmented_assignment'}:
-                    text = code_bytes[child.start_byte:child.end_byte].decode('utf-8')
+                if expr and expr.type in {
+                    "assignment",
+                    "annotated_assignment",
+                    "augmented_assignment",
+                }:
+                    text = code_bytes[child.start_byte : child.end_byte].decode("utf-8")
                     header_parts.append(f"    {text.strip()}")
 
             # __init__ method
-            elif child_type in {'function_definition', 'decorated_definition'}:
-                func_node = child if child_type == 'function_definition' else child.child_by_field_name('definition')
+            elif child_type in {"function_definition", "decorated_definition"}:
+                func_node = (
+                    child
+                    if child_type == "function_definition"
+                    else child.child_by_field_name("definition")
+                )
                 if func_node:
-                    name_node = func_node.child_by_field_name('name')
+                    name_node = func_node.child_by_field_name("name")
                     if name_node:
-                        func_name = code_bytes[name_node.start_byte:name_node.end_byte].decode('utf-8')
-                        if func_name == '__init__':
+                        func_name = code_bytes[
+                            name_node.start_byte : name_node.end_byte
+                        ].decode("utf-8")
+                        if func_name == "__init__":
                             init_node = func_node
 
         # Add __init__ if found
         if init_node:
-            init_text = code_bytes[init_node.start_byte:init_node.end_byte].decode('utf-8')
+            init_text = code_bytes[init_node.start_byte : init_node.end_byte].decode(
+                "utf-8"
+            )
             header_parts.append(f"\n    {init_text}")
 
-        return '\n'.join(header_parts) if len(header_parts) > 1 else None
+        return "\n".join(header_parts) if len(header_parts) > 1 else None
 
     def _extract_typescript_header(self, node: Node, source_code: str) -> Optional[str]:
         """
@@ -140,13 +157,15 @@ class ClassHeaderExtractor:
         path = Path(node.path if not node.path.startswith("file://") else node.path[7:])
         parser = self.ts_parser  # Default to TypeScript
 
-        tree = parser.parse(source_code.encode('utf-8'))
+        tree = parser.parse(source_code.encode("utf-8"))
         root = tree.root_node
-        code_bytes = source_code.encode('utf-8')
+        code_bytes = source_code.encode("utf-8")
 
         # Graph now stores 0-indexed line numbers (consistent with tree-sitter)
         # Find the class node matching our line range
-        class_node = self._find_class_node_typescript(root, node.start_line or 0, node.end_line or 0)
+        class_node = self._find_class_node_typescript(
+            root, node.start_line or 0, node.end_line or 0
+        )
         if not class_node:
             # Fallback: return just class signature
             lines = source_code.splitlines()
@@ -158,7 +177,7 @@ class ClassHeaderExtractor:
         # Get class body
         class_body = None
         for child in class_node.children:
-            if child.type == 'class_body':
+            if child.type == "class_body":
                 class_body = child
                 break
 
@@ -177,29 +196,34 @@ class ClassHeaderExtractor:
         for child in class_body.children:
             # Property declarations (e.g., private foo: string;)
             # Note: TypeScript uses 'public_field_definition' for all field declarations
-            if child.type in {'field_definition', 'public_field_definition'}:
-                text = code_bytes[child.start_byte:child.end_byte].decode('utf-8')
+            if child.type in {"field_definition", "public_field_definition"}:
+                text = code_bytes[child.start_byte : child.end_byte].decode("utf-8")
                 header_parts.append(f"  {text}")
 
             # Constructor method
-            elif child.type == 'method_definition':
-                name_node = child.child_by_field_name('name')
+            elif child.type == "method_definition":
+                name_node = child.child_by_field_name("name")
                 if name_node:
-                    method_name = code_bytes[name_node.start_byte:name_node.end_byte].decode('utf-8')
-                    if method_name == 'constructor':
+                    method_name = code_bytes[
+                        name_node.start_byte : name_node.end_byte
+                    ].decode("utf-8")
+                    if method_name == "constructor":
                         constructor_node = child
 
         # Add constructor if found
         if constructor_node:
-            constructor_text = code_bytes[constructor_node.start_byte:constructor_node.end_byte].decode('utf-8')
+            constructor_text = code_bytes[
+                constructor_node.start_byte : constructor_node.end_byte
+            ].decode("utf-8")
             header_parts.append(f"\n  {constructor_text}")
 
-        return '\n'.join(header_parts) if len(header_parts) > 1 else None
+        return "\n".join(header_parts) if len(header_parts) > 1 else None
 
     def _find_class_node_python(self, root, start_line: int, end_line: int):
         """Find the class_definition node matching the given line range"""
+
         def traverse(node):
-            if node.type == 'class_definition':
+            if node.type == "class_definition":
                 node_start = node.start_point[0]
                 node_end = node.end_point[0]
                 # Match based on line numbers (tree-sitter uses 0-indexed)
@@ -216,8 +240,9 @@ class ClassHeaderExtractor:
 
     def _find_class_node_typescript(self, root, start_line: int, end_line: int):
         """Find the class_declaration node matching the given line range"""
+
         def traverse(node):
-            if node.type == 'class_declaration':
+            if node.type == "class_declaration":
                 node_start = node.start_point[0]
                 node_end = node.end_point[0]
                 # Match based on line numbers
