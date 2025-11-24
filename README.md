@@ -25,6 +25,45 @@ CodeCompass indexes a codebase into:
 2. k-hop graph expansion pulls in structurally related code (via CALLS, IMPORTS edges)
 3. Combined context is sent to LLM for answering questions
 
+## AI Documentation Pipeline
+
+CodeCompass can automatically generate comprehensive wiki documentation for your codebase using a 4-phase pipeline:
+
+**Phase 1: Code Indexing**
+- Builds knowledge graph of all code elements (folders, files, classes, methods)
+- Creates CONTAINS edges for hierarchical structure
+- Caches to `.codecompass/graph.json` (~15s for medium repos)
+
+**Phase 2: AI Summarization**
+- Bottom-up approach: methods → classes → files → modules
+- Generates short summaries for all code elements using LLM
+- Adds IMPORTS edges for module architecture
+- Saves to `.codecompass/summaries.json` and `.codecompass/module_summaries.json`
+
+**Phase 3: Wiki IA Generation**
+- Uses module summaries to generate conceptual page structure
+- Creates user-friendly page hierarchy (e.g., "Agent Architecture", "Search Algorithms")
+- Assigns code nodes to appropriate pages for coverage
+- Saves to `.codecompass/wiki_ia.json`
+
+**Phase 4: Content Generation**
+- Generates markdown content for each wiki page
+- Uses hybrid context strategy (summaries + code) for token efficiency
+- Outputs to `wiki/*.md` directory
+
+**Usage:**
+```bash
+python documentation.py  # Runs all 4 phases
+```
+
+**Key Files:**
+- **`documentation.py`** - Main pipeline orchestration
+- **`docs/summarizers/`** - LLM-based summarizers for each level (definition, class, file, module)
+- **`docs/ia/ia_generator.py`** - Wiki structure generation
+- **`docs/ia/content_generator.py`** - Markdown content generation
+- **`docs/ia/prompts.py`** - LLM prompts for IA generation
+- **`core/summary_cache.py`** - Summary persistence layer
+
 ## Architecture
 
 ### Graph Structure
