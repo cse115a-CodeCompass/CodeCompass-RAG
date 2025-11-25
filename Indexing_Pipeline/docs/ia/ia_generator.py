@@ -7,18 +7,21 @@ Two-phase process:
 """
 
 import json
-from typing import Dict, Any, List, Optional
 from pathlib import Path
+from typing import Any, Dict, List, Optional
 
-from core.graph_model import Graph, NodeLabel
-from docs.llm.providers import LLMProvider
-from docs.ia.page_spec import PageSpec, PageKind, WikiIA
-from docs.ia.prompts import (
+from Indexing_Pipeline.core.graph_model import Graph, NodeLabel
+from Indexing_Pipeline.docs.ia.page_spec import PageKind, PageSpec, WikiIA
+from Indexing_Pipeline.docs.ia.prompts import (
+    SYSTEM_PROMPT,
     build_global_ia_prompt,
     build_module_subpages_prompt,
-    SYSTEM_PROMPT
 )
-from docs.ia.scope_computer import compute_all_scopes, validate_coverage
+from Indexing_Pipeline.docs.ia.scope_computer import (
+    compute_all_scopes,
+    validate_coverage,
+)
+from Indexing_Pipeline.docs.llm.providers import LLMProvider
 
 
 async def generate_global_ia(
@@ -26,7 +29,7 @@ async def generate_global_ia(
     project_name: str,
     module_summaries: Dict[str, Dict[str, Any]],
     base_dir: str,
-    verbose: bool = False
+    verbose: bool = False,
 ) -> List[PageSpec]:
     """
     Generate the top-level wiki IA using LLM.
@@ -47,6 +50,7 @@ async def generate_global_ia(
     # Get top-level modules (those without '/' or with only one '/')
     # Extract relative paths from the full filesystem paths
     from pathlib import Path as PathLib
+
     base_path = PathLib(base_dir).resolve() if base_dir else None
 
     top_level_modules = {}
@@ -59,13 +63,17 @@ async def generate_global_ia(
 
         # Convert to relative path
         try:
-            rel_path = PathLib(full_path).resolve().relative_to(base_path) if base_path else PathLib(full_path)
-            rel_path_str = str(rel_path).replace('\\', '/')
+            rel_path = (
+                PathLib(full_path).resolve().relative_to(base_path)
+                if base_path
+                else PathLib(full_path)
+            )
+            rel_path_str = str(rel_path).replace("\\", "/")
         except (ValueError, TypeError):
             continue
 
         # Consider top-level if path has 0 or 1 separators
-        if rel_path_str.count('/') <= 1:
+        if rel_path_str.count("/") <= 1:
             top_level_modules[rel_path_str] = summary
 
     if verbose:
@@ -75,14 +83,14 @@ async def generate_global_ia(
     prompt = build_global_ia_prompt(
         project_name=project_name,
         top_level_modules=top_level_modules,
-        module_summaries=module_summaries
+        module_summaries=module_summaries,
     )
 
     # Call LLM
     success, response, error = await provider.generate_text(
         system_prompt=SYSTEM_PROMPT,
         user_prompt=prompt,
-        temperature=0.4  # Slightly higher for creativity in IA design
+        temperature=0.4,  # Slightly higher for creativity in IA design
     )
 
     if not success or not response:
@@ -94,19 +102,19 @@ async def generate_global_ia(
         response_cleaned = response.strip()
         if response_cleaned.startswith("```"):
             # Remove markdown code blocks
-            lines = response_cleaned.split('\n')
+            lines = response_cleaned.split("\n")
             # Find start and end of JSON
             start_idx = 0
             end_idx = len(lines)
             for i, line in enumerate(lines):
-                if line.strip().startswith('['):
+                if line.strip().startswith("["):
                     start_idx = i
                     break
             for i in range(len(lines) - 1, -1, -1):
-                if lines[i].strip().endswith(']'):
+                if lines[i].strip().endswith("]"):
                     end_idx = i + 1
                     break
-            response_cleaned = '\n'.join(lines[start_idx:end_idx])
+            response_cleaned = "\n".join(lines[start_idx:end_idx])
 
         pages_data = json.loads(response_cleaned)
 
@@ -134,7 +142,7 @@ async def generate_module_subpages(
     page: PageSpec,
     module_summaries: Dict[str, Dict[str, Any]],
     base_dir: str,
-    verbose: bool = False
+    verbose: bool = False,
 ) -> List[PageSpec]:
     """
     Generate subpages for a specific module page.
@@ -165,11 +173,12 @@ async def generate_module_subpages(
     def get_relative_module_path(full_path: str, base_dir: str) -> str:
         """Extract relative module path like 'pacai/agents' from full path."""
         from pathlib import Path
+
         try:
             full = Path(full_path).resolve()
             base = Path(base_dir).resolve()
             rel = full.relative_to(base)
-            return str(rel).replace('\\', '/')
+            return str(rel).replace("\\", "/")
         except:
             return ""
 
@@ -192,7 +201,9 @@ async def generate_module_subpages(
         else:
             # No match found - this shouldn't happen if LLM follows constraints
             if verbose:
-                print(f"    WARNING: Module path '{module_path}' not found in summaries (LLM may have hallucinated path)")
+                print(
+                    f"    WARNING: Module path '{module_path}' not found in summaries (LLM may have hallucinated path)"
+                )
 
     if not modules:
         if verbose:
@@ -204,14 +215,12 @@ async def generate_module_subpages(
         page_title=page.title,
         page_description=page.description,
         modules=modules,
-        module_details=module_details
+        module_details=module_details,
     )
 
     # Call LLM
     success, response, error = await provider.generate_text(
-        system_prompt=SYSTEM_PROMPT,
-        user_prompt=prompt,
-        temperature=0.4
+        system_prompt=SYSTEM_PROMPT, user_prompt=prompt, temperature=0.4
     )
 
     if not success or not response:
@@ -224,18 +233,18 @@ async def generate_module_subpages(
         # Clean response (remove markdown code blocks if present)
         response_cleaned = response.strip()
         if response_cleaned.startswith("```"):
-            lines = response_cleaned.split('\n')
+            lines = response_cleaned.split("\n")
             start_idx = 0
             end_idx = len(lines)
             for i, line in enumerate(lines):
-                if line.strip().startswith('['):
+                if line.strip().startswith("["):
                     start_idx = i
                     break
             for i in range(len(lines) - 1, -1, -1):
-                if lines[i].strip().endswith(']'):
+                if lines[i].strip().endswith("]"):
                     end_idx = i + 1
                     break
-            response_cleaned = '\n'.join(lines[start_idx:end_idx])
+            response_cleaned = "\n".join(lines[start_idx:end_idx])
 
         subpages_data = json.loads(response_cleaned)
 
@@ -270,7 +279,7 @@ async def generate_ia(
     base_dir: str,
     project_name: str = "Project",
     generate_subpages: bool = True,
-    verbose: bool = False
+    verbose: bool = False,
 ) -> WikiIA:
     """
     Generate complete wiki IA using LLMs.
@@ -307,7 +316,7 @@ async def generate_ia(
         project_name=project_name,
         module_summaries=module_summaries,
         base_dir=base_dir,
-        verbose=verbose
+        verbose=verbose,
     )
 
     # Phase 2: Generate subpages for module pages
@@ -326,7 +335,7 @@ async def generate_ia(
                 page=page,
                 module_summaries=module_summaries,
                 base_dir=base_dir,
-                verbose=verbose
+                verbose=verbose,
             )
             page.children = subpages
 
@@ -336,8 +345,8 @@ async def generate_ia(
         metadata={
             "project_name": project_name,
             "base_dir": base_dir,
-            "generated_with_subpages": generate_subpages
-        }
+            "generated_with_subpages": generate_subpages,
+        },
     )
 
     # Phase 3: Compute scope for all pages
@@ -345,10 +354,7 @@ async def generate_ia(
         print("\nPhase 3: Computing node scope for pages...")
 
     pages_processed = compute_all_scopes(
-        ia=ia,
-        graph=graph,
-        base_dir=base_dir,
-        verbose=verbose
+        ia=ia, graph=graph, base_dir=base_dir, verbose=verbose
     )
 
     if verbose:
@@ -385,7 +391,7 @@ async def generate_ia(
         print(f"Total pages: {stats['total_pages']}")
         print(f"Max depth: {stats['max_depth']}")
         print(f"Pages by kind:")
-        for kind, count in stats['pages_by_kind'].items():
+        for kind, count in stats["pages_by_kind"].items():
             print(f"  - {kind}: {count}")
         print(f"Coverage: {coverage_stats['coverage_percentage']:.1f}%")
 

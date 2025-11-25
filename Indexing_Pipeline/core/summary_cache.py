@@ -7,12 +7,14 @@ Summaries are stored in JSON format and merged back into freshly-built graphs.
 
 import json
 from pathlib import Path
-from typing import Dict, Any
+from typing import Any, Dict
 
-from core.graph_model import Graph, NodeLabel
+from .graph_model import Graph, NodeLabel
 
 
-def save_summaries(graph: Graph, cache_path: str = ".codecompass/summaries.json") -> int:
+def save_summaries(
+    graph: Graph, cache_path: str = ".codecompass/summaries.json"
+) -> int:
     """
     Save summaries from graph nodes to a JSON cache file.
 
@@ -33,16 +35,22 @@ def save_summaries(graph: Graph, cache_path: str = ".codecompass/summaries.json"
 
     for node_id, node in graph.nodes.items():
         # Save nodes with summaries (definitions and files/folders)
-        if node.label not in {NodeLabel.CLASS, NodeLabel.FUNCTION, NodeLabel.METHOD, NodeLabel.FILE, NodeLabel.FOLDER}:
+        if node.label not in {
+            NodeLabel.CLASS,
+            NodeLabel.FUNCTION,
+            NodeLabel.METHOD,
+            NodeLabel.FILE,
+            NodeLabel.FOLDER,
+        }:
             continue
 
         # Check if node has any summary or metrics
         has_data = (
-            node.summary_short or
-            node.summary_detailed or
-            node.loc is not None or
-            node.fan_in > 0 or
-            node.fan_out > 0
+            node.summary_short
+            or node.summary_detailed
+            or node.loc is not None
+            or node.fan_in > 0
+            or node.fan_out > 0
         )
 
         if has_data:
@@ -55,11 +63,13 @@ def save_summaries(graph: Graph, cache_path: str = ".codecompass/summaries.json"
             }
 
     # Write to file
-    cache_file.write_text(json.dumps(summary_cache, indent=2), encoding='utf-8')
+    cache_file.write_text(json.dumps(summary_cache, indent=2), encoding="utf-8")
     return len(summary_cache)
 
 
-def load_summaries(graph: Graph, cache_path: str = ".codecompass/summaries.json") -> int:
+def load_summaries(
+    graph: Graph, cache_path: str = ".codecompass/summaries.json"
+) -> int:
     """
     Load summaries from JSON cache and merge into graph nodes.
 
@@ -79,7 +89,7 @@ def load_summaries(graph: Graph, cache_path: str = ".codecompass/summaries.json"
         return 0
 
     try:
-        summary_cache = json.loads(cache_file.read_text(encoding='utf-8'))
+        summary_cache = json.loads(cache_file.read_text(encoding="utf-8"))
     except (json.JSONDecodeError, IOError):
         # Corrupted or unreadable cache - skip loading
         return 0

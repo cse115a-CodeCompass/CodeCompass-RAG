@@ -8,17 +8,18 @@ This module builds token-efficient context for each wiki page by:
 4. Staying within token budget (~15-20k tokens per page)
 """
 
-from typing import Dict, List, Set
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Dict, List, Set
 
-from core.graph_model import Graph, Node, NodeLabel
-from docs.ia.page_spec import PageSpec
+from Indexing_Pipeline.core.graph_model import Graph, Node, NodeLabel
+from Indexing_Pipeline.docs.ia.page_spec import PageSpec
 
 
 @dataclass
 class PageContext:
     """Context for generating a single wiki page."""
+
     page_slug: str
     page_title: str
     page_kind: str
@@ -83,7 +84,9 @@ class PageContext:
                 if methods:
                     lines.append("**Methods:**")
                     for method in methods[:10]:  # Cap at 10 methods per class
-                        method_summary = method.summary_short or method.extra.get("summary_short", "")
+                        method_summary = method.summary_short or method.extra.get(
+                            "summary_short", ""
+                        )
                         if method_summary:
                             lines.append(f"- `{method.name}`: {method_summary}")
                         else:
@@ -111,10 +114,7 @@ class PageContext:
 
 
 def build_page_context(
-    graph: Graph,
-    page: PageSpec,
-    base_dir: str,
-    verbose: bool = False
+    graph: Graph, page: PageSpec, base_dir: str, verbose: bool = False
 ) -> PageContext:
     """
     Build hybrid context for a wiki page.
@@ -133,7 +133,7 @@ def build_page_context(
         page_title=page.title,
         page_kind=page.kind.value,
         page_description=page.description,
-        modules=page.modules
+        modules=page.modules,
     )
 
     # Group nodes by type

@@ -4,8 +4,7 @@ LLM prompts for generating wiki page content.
 Different prompts for different page kinds to generate appropriate content style.
 """
 
-from docs.ia.context_builder import PageContext
-
+from Indexing_Pipeline.docs.ia.context_builder import PageContext
 
 # System prompt used for all page types
 SYSTEM_PROMPT = """You are an expert technical writer creating clear, accurate documentation for a Python codebase.
@@ -30,8 +29,12 @@ def build_overview_prompt(context: PageContext, wiki_pages_summary: str = "") ->
     These pages introduce the codebase at a high level.
     """
     # Use wiki pages summary if no actual code nodes (files/classes/functions)
-    has_code_nodes = (len(context.files) > 0 or len(context.classes) > 0 or
-                     len(context.functions) > 0 or len(context.methods) > 0)
+    has_code_nodes = (
+        len(context.files) > 0
+        or len(context.classes) > 0
+        or len(context.functions) > 0
+        or len(context.methods) > 0
+    )
 
     if not has_code_nodes and wiki_pages_summary:
         context_section = wiki_pages_summary
@@ -332,7 +335,9 @@ Write a conceptual explanation page in Markdown:
 Generate the complete Markdown page now."""
 
 
-def get_prompt_for_page(context: PageContext, wiki_pages_summary: str = "") -> tuple[str, str]:
+def get_prompt_for_page(
+    context: PageContext, wiki_pages_summary: str = ""
+) -> tuple[str, str]:
     """
     Get the appropriate (system, user) prompt pair for a page.
 

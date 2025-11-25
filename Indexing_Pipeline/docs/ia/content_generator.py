@@ -5,14 +5,14 @@ Takes PageSpec + Graph -> builds context -> generates markdown content.
 """
 
 import asyncio
-from typing import Dict, List, Optional, TYPE_CHECKING
 from pathlib import Path
+from typing import TYPE_CHECKING, Dict, List, Optional
 
-from core.graph_model import Graph
-from docs.llm.providers import LLMProvider
-from docs.ia.page_spec import PageSpec, WikiIA
-from docs.ia.context_builder import build_page_context
-from docs.ia.content_prompts import get_prompt_for_page
+from Indexing_Pipeline.core.graph_model import Graph
+from Indexing_Pipeline.docs.ia.content_prompts import get_prompt_for_page
+from Indexing_Pipeline.docs.ia.context_builder import build_page_context
+from Indexing_Pipeline.docs.ia.page_spec import PageSpec, WikiIA
+from Indexing_Pipeline.docs.llm.providers import LLMProvider
 
 if TYPE_CHECKING:
     from docs.ia.page_spec import WikiIA
@@ -23,8 +23,8 @@ async def generate_page_markdown(
     page: PageSpec,
     provider: LLMProvider,
     base_dir: str,
-    wiki_ia: Optional['WikiIA'] = None,
-    verbose: bool = False
+    wiki_ia: Optional["WikiIA"] = None,
+    verbose: bool = False,
 ) -> str:
     """
     Generate markdown content for a single wiki page.
@@ -48,13 +48,13 @@ async def generate_page_markdown(
         graph=graph,
         page=page,
         base_dir=base_dir,
-        verbose=False  # Don't spam with context details
+        verbose=False,  # Don't spam with context details
     )
 
     # For overview pages with no nodes, build summary from wiki pages
     wiki_pages_summary = ""
     if page.kind.value == "overview" and len(page.node_ids) == 0 and wiki_ia:
-        from docs.ia.content_prompts import build_overview_prompt
+        from Indexing_Pipeline.docs.ia.content_prompts import build_overview_prompt
 
         # Build summary of all top-level pages
         lines = []
@@ -83,7 +83,7 @@ async def generate_page_markdown(
     success, markdown, error = await provider.generate_text(
         system_prompt=system_prompt,
         user_prompt=user_prompt,
-        temperature=0.3  # Lower temperature for more consistent documentation
+        temperature=0.3,  # Lower temperature for more consistent documentation
     )
 
     if not success or not markdown:
@@ -99,7 +99,7 @@ async def generate_all_pages(
     base_dir: str,
     output_dir: str = "wiki",
     verbose: bool = False,
-    max_concurrent: int = 3
+    max_concurrent: int = 3,
 ) -> Dict[str, str]:
     """
     Generate markdown for all pages in the wiki IA.
@@ -143,7 +143,7 @@ async def generate_all_pages(
                     provider=provider,
                     base_dir=base_dir,
                     wiki_ia=ia,
-                    verbose=verbose
+                    verbose=verbose,
                 )
                 return page.slug, markdown
             except Exception as e:
@@ -166,9 +166,7 @@ async def generate_all_pages(
 
 
 def save_wiki_pages(
-    results: Dict[str, str],
-    output_dir: str = "wiki",
-    verbose: bool = False
+    results: Dict[str, str], output_dir: str = "wiki", verbose: bool = False
 ) -> int:
     """
     Save generated markdown to files.
@@ -203,7 +201,7 @@ def save_wiki_pages(
         file_path.parent.mkdir(parents=True, exist_ok=True)
 
         # Write markdown
-        file_path.write_text(markdown, encoding='utf-8')
+        file_path.write_text(markdown, encoding="utf-8")
         saved_count += 1
 
         if verbose:
@@ -222,7 +220,7 @@ async def generate_wiki(
     base_dir: str,
     output_dir: str = "wiki",
     max_concurrent: int = 3,
-    verbose: bool = False
+    verbose: bool = False,
 ) -> Dict[str, str]:
     """
     Complete wiki generation pipeline.
@@ -250,15 +248,11 @@ async def generate_wiki(
         base_dir=base_dir,
         output_dir=output_dir,
         verbose=verbose,
-        max_concurrent=max_concurrent
+        max_concurrent=max_concurrent,
     )
 
     # Save to files
-    save_wiki_pages(
-        results=results,
-        output_dir=output_dir,
-        verbose=verbose
-    )
+    save_wiki_pages(results=results, output_dir=output_dir, verbose=verbose)
 
     if verbose:
         print("\n" + "=" * 60)
