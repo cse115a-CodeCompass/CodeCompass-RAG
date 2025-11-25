@@ -281,7 +281,11 @@ class PythonHandler(LanguageHandler):
         return "python"
 
     def collect_identifiers(
-        self, source_code: str, start_line: int, end_line: int
+        self,
+        file_path: str,
+        source_code: str,
+        start_line: int,
+        end_line: int
     ) -> List[Tuple[str, int, int]]:
         """
         Extract identifiers from a Python code range for LSP queries.
@@ -290,6 +294,7 @@ class PythonHandler(LanguageHandler):
         excluding comments, docstrings, and string literals.
 
         Args:
+            file_path: Path to the source file (unused for Python, but required by interface)
             source_code: Full source code of the file
             start_line: Starting line number (0-indexed)
             end_line: Ending line number (0-indexed, inclusive)

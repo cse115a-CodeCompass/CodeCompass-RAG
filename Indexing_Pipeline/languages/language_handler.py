@@ -129,7 +129,11 @@ class LanguageHandler(ABC):
 
     @abstractmethod
     def collect_identifiers(
-        self, source_code: str, start_line: int, end_line: int
+        self,
+        file_path: str,
+        source_code: str,
+        start_line: int,
+        end_line: int
     ) -> List[Tuple[str, int, int]]:
         """
         Extract identifiers from a code range for LSP definition queries.
@@ -145,6 +149,7 @@ class LanguageHandler(ABC):
         - Rust: func!(), obj.method(), Type::new()
 
         Args:
+            file_path: Path to the source file (used for language-variant selection)
             source_code: Full source code of the file
             start_line: Starting line number (0-indexed)
             end_line: Ending line number (0-indexed, inclusive)

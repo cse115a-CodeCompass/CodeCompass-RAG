@@ -373,7 +373,11 @@ class TypeScriptHandler(LanguageHandler):
         return "typescript"
 
     def collect_identifiers(
-        self, source_code: str, start_line: int, end_line: int
+        self,
+        file_path: str,
+        source_code: str,
+        start_line: int,
+        end_line: int
     ) -> List[Tuple[str, int, int]]:
         """
         Extract identifiers from a TypeScript/JavaScript code range for LSP queries.
@@ -382,6 +386,7 @@ class TypeScriptHandler(LanguageHandler):
         excluding comments, docstrings, and string literals.
 
         Args:
+            file_path: Path to the source file (used to select TS vs TSX parser)
             source_code: Full source code of the file
             start_line: Starting line number (0-indexed)
             end_line: Ending line number (0-indexed, inclusive)
@@ -389,7 +394,8 @@ class TypeScriptHandler(LanguageHandler):
         Returns:
             List of (identifier_name, line, column) tuples
         """
-        tree = self.parser.parse(source_code.encode("utf-8"))
+        parser = self._get_parser_for_file(file_path)
+        tree = parser.parse(source_code.encode('utf-8'))
         root = tree.root_node
         code_bytes = source_code.encode("utf-8")
 

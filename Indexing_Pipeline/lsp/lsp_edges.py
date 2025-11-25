@@ -320,6 +320,7 @@ def add_calls_edges(graph: Graph,
 
             # Get identifiers using language-specific handler
             identifiers = handler.collect_identifiers(
+                caller_node.path,
                 content,
                 caller_node.start_line,
                 caller_node.end_line
