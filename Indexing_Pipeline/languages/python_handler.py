@@ -9,7 +9,7 @@ import re
 import shutil
 from bisect import bisect_right
 from pathlib import Path
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 import tree_sitter_python
 from tree_sitter import Language as TS_Language
@@ -370,3 +370,106 @@ class PythonHandler(LanguageHandler):
 
         traverse(root)
         return out
+
+    def extract_class_header(
+        self, node: Node, source_code: str
+    ) -> Optional[str]:
+        """
+        Extract Python class header (class vars + __init__) for vectorization.
+
+        Extracts:
+        - Class declaration line
+        - Class-level variable assignments and type annotations
+        - __init__ method (if present)
+        """
+        if node.label != NodeLabel.CLASS:
+            return None
+
+        tree = self.parser.parse(source_code.encode("utf-8"))
+        root = tree.root_node
+        code_bytes = source_code.encode("utf-8")
+
+        def text(ts_node):
+            return code_bytes[ts_node.start_byte : ts_node.end_byte].decode("utf-8")
+
+        # Find the class node matching our line range (0-indexed)
+        class_node = self._find_class_node(
+            root, node.start_line or 0, node.end_line or 0
+        )
+        if not class_node:
+            # Fallback: return just class signature
+            lines = source_code.splitlines()
+            start_line = node.start_line or 0
+            if start_line < len(lines):
+                return lines[start_line].strip()
+            return None
+
+        # Get class body (the 'block' child)
+        class_body = None
+        for child in class_node.children:
+            if child.type == "block":
+                class_body = child
+                break
+
+        if not class_body:
+            return None
+
+        header_parts = []
+
+        # Add class declaration line
+        class_start_line = class_node.start_point[0]
+        class_signature = source_code.splitlines()[class_start_line].strip()
+        header_parts.append(class_signature)
+
+        # Extract class-level assignments, type annotations, and __init__
+        init_node = None
+        for child in class_body.children:
+            child_type = child.type
+
+            # Class-level expressions (type annotations, assignments)
+            if child_type == "expression_statement":
+                expr = child.children[0] if child.children else None
+                if expr and expr.type in {
+                    "assignment",
+                    "annotated_assignment",
+                    "augmented_assignment",
+                }:
+                    header_parts.append(f"    {text(child).strip()}")
+
+            # __init__ method
+            elif child_type in {"function_definition", "decorated_definition"}:
+                func_node = (
+                    child
+                    if child_type == "function_definition"
+                    else child.child_by_field_name("definition")
+                )
+                if func_node:
+                    name_node = func_node.child_by_field_name("name")
+                    if name_node and text(name_node) == "__init__":
+                        init_node = func_node
+
+        # Add __init__ if found
+        if init_node:
+            init_text = text(init_node)
+            header_parts.append(f"\n    {init_text}")
+
+        return "\n".join(header_parts) if len(header_parts) > 1 else None
+
+    def _find_class_node(self, root, start_line: int, end_line: int):
+        """Find the class_definition node matching the given line range."""
+
+        def traverse(ts_node):
+            if ts_node.type == "class_definition":
+                node_start = ts_node.start_point[0]
+                node_end = ts_node.end_point[0]
+                # Match based on 0-indexed line numbers
+                if node_start == start_line and node_end == end_line:
+                    return ts_node
+
+            for child in ts_node.children:
+                result = traverse(child)
+                if result:
+                    return result
+            return None
+
+        return traverse(root)

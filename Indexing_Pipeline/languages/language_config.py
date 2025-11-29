@@ -9,12 +9,16 @@ To add support for a new language:
 
 from Indexing_Pipeline.languages.python_handler import PythonHandler
 from Indexing_Pipeline.languages.typescript_handler import TypeScriptHandler
+from Indexing_Pipeline.languages.c_handler import CHandler
+from Indexing_Pipeline.languages.cpp_handler import CppHandler
 
 # List of enabled language handlers
 # Each handler instance provides language-specific parsing and LSP configuration
 ENABLED_LANGUAGES = [
     PythonHandler(),
     TypeScriptHandler(),  # Handles .ts, .tsx, .js, .jsx
-    # GoHandler(),          # Uncomment when Go support is ready
-    # RustHandler(),        # Uncomment when Rust support is ready
+    CHandler(),           # Handles .c files
+    CppHandler(),         # Handles .cpp, .hpp, .cc, .cxx, .h files
+    # GoHandler(),        # Uncomment when Go support is ready
+    # RustHandler(),      # Uncomment when Rust support is ready
 ]

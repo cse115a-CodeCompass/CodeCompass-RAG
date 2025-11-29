@@ -7,7 +7,7 @@ to provide Tree-sitter parsing and LSP server configuration.
 """
 
 from abc import ABC, abstractmethod
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 from tree_sitter import Language, Parser
 
@@ -157,5 +157,33 @@ class LanguageHandler(ABC):
         Returns:
             List of (identifier_name, line, column) tuples for LSP queries.
             Line and column are 0-indexed.
+        """
+        pass
+
+    @abstractmethod
+    def extract_class_header(
+        self, node: Node, source_code: str
+    ) -> Optional[str]:
+        """
+        Extract class header (variables + constructor) for vectorization.
+
+        When vectorizing classes, we don't want to duplicate method code (since
+        methods are vectorized separately). Instead, we extract just the class
+        "header": class-level variables/properties and the constructor.
+
+        Each language has different class structures:
+        - Python: class vars, type annotations, __init__ method
+        - TypeScript/JS: property declarations, constructor method
+        - C++: member declarations, constructor(s)
+        - Go: struct fields (Go has no constructors)
+        - Rust: struct fields, impl new() if present
+
+        Args:
+            node: CLASS node from the graph with path, start_line, end_line
+            source_code: Full source code of the file
+
+        Returns:
+            String containing class header (signature + vars + constructor),
+            or None if extraction fails or node is not a class
         """
         pass

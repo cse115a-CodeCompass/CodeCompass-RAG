@@ -13,9 +13,9 @@ from collections import defaultdict
 from urllib.parse import urlparse, unquote
 import ast
 
-from core.graph_model import Graph, Node, NodeLabel, EdgeType
-from lsp.lsp_client import to_lsp_pos
-from lsp.lsp_manager import LSPManager
+from ..core.graph_model import Graph, Node, NodeLabel, EdgeType
+from .lsp_client import to_lsp_pos
+from .lsp_manager import LSPManager
 
 
 def _uri_to_path(uri: str) -> Path:
@@ -343,7 +343,7 @@ def add_calls_edges(graph: Graph,
                     lsp_pos = to_lsp_pos(content, line, col)
 
                     # Query LSP for definition
-                    result = lsp_client.definition(file_uri, lsp_pos)
+                    result = lsp_client.definition(file_uri, lsp_pos, debug=True)
 
                     # Handle both single Location and Location[]
                     if result is None:

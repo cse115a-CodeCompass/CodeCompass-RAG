@@ -10,10 +10,10 @@ from pathlib import Path
 from typing import Optional
 from dotenv import load_dotenv
 
-from core.code_indexing import CodeIndexer
-from languages.language_config import ENABLED_LANGUAGES
-from docs.tree_generator import generate_tree_from_graph
-from docs.wiki_structure import WikiStructure
+from ..core.code_indexing import CodeIndexer
+from ..languages.language_config import ENABLED_LANGUAGES
+from .tree_generator import generate_tree_from_graph
+from .wiki_structure import WikiStructure
 
 
 def read_readme(repo_path: str) -> Optional[str]:

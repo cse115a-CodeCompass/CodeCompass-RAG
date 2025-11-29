@@ -12,7 +12,7 @@ import re
 import shutil
 from bisect import bisect_right
 from pathlib import Path
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 import tree_sitter_typescript
 from tree_sitter import Language as TS_Language
@@ -463,3 +463,93 @@ class TypeScriptHandler(LanguageHandler):
 
         traverse(root)
         return out
+
+    def extract_class_header(
+        self, node: Node, source_code: str
+    ) -> Optional[str]:
+        """
+        Extract TypeScript/JavaScript class header (properties + constructor).
+
+        Extracts:
+        - Class declaration line
+        - Property/field declarations
+        - constructor method (if present)
+        """
+        if node.label != NodeLabel.CLASS:
+            return None
+
+        parser = self._get_parser_for_file(node.path)
+        tree = parser.parse(source_code.encode("utf-8"))
+        root = tree.root_node
+        code_bytes = source_code.encode("utf-8")
+
+        def text(ts_node):
+            return code_bytes[ts_node.start_byte : ts_node.end_byte].decode("utf-8")
+
+        # Find the class node matching our line range (0-indexed)
+        class_node = self._find_class_node(
+            root, node.start_line or 0, node.end_line or 0
+        )
+        if not class_node:
+            # Fallback: return just class signature
+            lines = source_code.splitlines()
+            start_line = node.start_line or 0
+            if start_line < len(lines):
+                return lines[start_line].strip()
+            return None
+
+        # Get class body
+        class_body = None
+        for child in class_node.children:
+            if child.type == "class_body":
+                class_body = child
+                break
+
+        if not class_body:
+            return None
+
+        header_parts = []
+
+        # Add class declaration line
+        class_start_line = class_node.start_point[0]
+        class_signature = source_code.splitlines()[class_start_line].strip()
+        header_parts.append(class_signature)
+
+        # Extract properties and constructor
+        constructor_node = None
+        for child in class_body.children:
+            # Property declarations (public/private/static fields)
+            if child.type in {"field_definition", "public_field_definition"}:
+                header_parts.append(f"  {text(child)}")
+
+            # Constructor method
+            elif child.type == "method_definition":
+                name_node = child.child_by_field_name("name")
+                if name_node and text(name_node) == "constructor":
+                    constructor_node = child
+
+        # Add constructor if found
+        if constructor_node:
+            constructor_text = text(constructor_node)
+            header_parts.append(f"\n  {constructor_text}")
+
+        return "\n".join(header_parts) if len(header_parts) > 1 else None
+
+    def _find_class_node(self, root, start_line: int, end_line: int):
+        """Find the class_declaration node matching the given line range."""
+
+        def traverse(ts_node):
+            if ts_node.type == "class_declaration":
+                node_start = ts_node.start_point[0]
+                node_end = ts_node.end_point[0]
+                # Match based on 0-indexed line numbers
+                if node_start == start_line and node_end == end_line:
+                    return ts_node
+
+            for child in ts_node.children:
+                result = traverse(child)
+                if result:
+                    return result
+            return None
+
+        return traverse(root)

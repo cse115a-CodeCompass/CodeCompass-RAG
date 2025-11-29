@@ -1,13 +1,14 @@
 import os
 import re
 from pathlib import Path
-from typing import Any, Dict, Iterable, List
+from typing import Any, Dict, Iterable, List, Optional
 from urllib.parse import unquote, urlparse
 
 from langchain_chroma import Chroma
 from langchain_core.documents import Document
 
-from Indexing_Pipeline.vectorization.class_header_extractor import ClassHeaderExtractor
+from Indexing_Pipeline.languages.language_config import ENABLED_LANGUAGES
+from Indexing_Pipeline.languages.language_handler import LanguageHandler
 from Indexing_Pipeline.vectorization.embeddings_config import DEFAULT_EMBEDDINGS
 
 
@@ -35,15 +36,25 @@ def node_text(n) -> str:
     return "".join(lines[s : e + 1])
 
 
-def nodes_to_documents(nodes: Iterable, G) -> List[Document]:
+def _get_handler_for_file(path: str, handlers: List[LanguageHandler]) -> Optional[LanguageHandler]:
+    """Get the appropriate language handler for a file based on extension."""
+    ext = Path(path).suffix.lower()
+    for handler in handlers:
+        if ext in handler.get_file_extensions():
+            return handler
+    return None
+
+
+def nodes_to_documents(nodes: Iterable, G, handlers: Optional[List[LanguageHandler]] = None) -> List[Document]:
+    # Use provided handlers or default to ENABLED_LANGUAGES
+    if handlers is None:
+        handlers = ENABLED_LANGUAGES
+
     # Build parent lookup once: child_id -> parent_node (for CONTAINS edges only)
     child_to_parent: Dict[str, Any] = {}
     for edge in G.edges:
         if edge.type.value == "CONTAINS":
             child_to_parent[edge.dst] = G.nodes.get(edge.src)
-
-    # Initialize class header extractor for smart class chunking
-    class_extractor = ClassHeaderExtractor()
 
     docs: List[Document] = []
     class_count = 0
@@ -60,8 +71,13 @@ def nodes_to_documents(nodes: Iterable, G) -> List[Document]:
             try:
                 # Read the source file
                 file_content = Path(fs_path).read_text(encoding="utf-8")
-                # Extract just the class header (not full class body)
-                content = class_extractor.extract_header(n, file_content)
+
+                # Get handler for this file type and extract class header
+                handler = _get_handler_for_file(fs_path, handlers)
+                if handler:
+                    content = handler.extract_class_header(n, file_content)
+                else:
+                    content = None
 
                 if not content:
                     # Fallback: use just class signature if extraction fails

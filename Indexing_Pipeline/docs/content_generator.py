@@ -11,8 +11,8 @@ from pathlib import Path
 from typing import Optional, Dict
 from dotenv import load_dotenv
 
-from docs.wiki_structure import WikiStructure, WikiPage
-from docs.context_gatherer import PageContext
+from .wiki_structure import WikiStructure, WikiPage
+from .context_gatherer import PageContext
 
 
 # Load the documentation prompt template

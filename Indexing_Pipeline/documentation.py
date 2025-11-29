@@ -200,7 +200,7 @@ async def generate_summaries(
         if verbose:
             print(f"  Added {imports_count} IMPORTS edges")
 
-        lsp_manager.shutdown_all()
+        lsp_manager.shutdown_all(cleanup_generated=False)
 
     except Exception as e:
         print(f"  Warning: Could not build IMPORTS edges: {e}")

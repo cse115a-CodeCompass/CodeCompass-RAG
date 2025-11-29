@@ -63,6 +63,9 @@ class LSPClient:
         self._q: "queue.Queue[dict]" = queue.Queue()
         self._reader = threading.Thread(target=self._read_loop, daemon=True)
         self._reader.start()
+        # Drain stderr to prevent blocking (clangd outputs logs/errors there)
+        self._stderr_reader = threading.Thread(target=self._drain_stderr, daemon=True)
+        self._stderr_reader.start()
         self.root_uri = pathlib.Path(root).resolve().as_uri()
         self._initialize()
 
@@ -70,12 +73,14 @@ class LSPClient:
     #   headers (ASCII lines) ending with \r\n\r\n, then JSON body (UTF-8) of length Content-Length
     def _read_loop(self):
         r = self.proc.stdout  # type: ignore
+        msg_count = 0
         while True:
             # --- read headers until CRLFCRLF ---
             headers = b""
             while True:
                 line = r.readline()
                 if line == b"":  # EOF
+                    print(f"    [LSP Reader] EOF after {msg_count} messages - clangd closed stdout")
                     return
                 headers += line
                 if headers.endswith(b"\r\n\r\n"):
@@ -88,13 +93,25 @@ class LSPClient:
             # --- read body ---
             body = r.read(length)
             if not body:
+                print(f"    [LSP Reader] Empty body after {msg_count} messages")
                 return
             try:
                 msg = json.loads(body.decode("utf-8"))
+                msg_count += 1
                 self._q.put(msg)
-            except Exception:
-                # ignore malformed packets
-                pass
+            except Exception as e:
+                print(f"    [LSP Reader] JSON parse error: {e}")
+
+    def _drain_stderr(self):
+        """Drain stderr to prevent clangd from blocking when buffer fills."""
+        stderr = self.proc.stderr
+        if stderr is None:
+            return
+        for line in stderr:
+            # Print clangd errors/warnings for debugging
+            text = line.decode("utf-8", errors="replace").rstrip()
+            if text:
+                print(f"    [LSP stderr] {text}")
 
     def _send(self, payload: dict):
         data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
@@ -103,15 +120,36 @@ class LSPClient:
         w.write(header + data)
         w.flush()
 
-    def request(self, method: str, params: dict):
+    def request(self, method: str, params: dict, debug: bool = False):
         self._id += 1
         rid = self._id
+        if debug:
+            print(f"    [LSP Debug] Sending request id={rid} method={method}")
         self._send({"jsonrpc": "2.0", "id": rid, "method": method, "params": params})
         # wait for matching response id
+        skipped = 0
+        wait_count = 0
         while True:
-            msg = self._q.get()
+            try:
+                # Use timeout so we can print waiting status
+                msg = self._q.get(timeout=5.0)
+            except queue.Empty:
+                wait_count += 1
+                if debug:
+                    print(f"    [LSP Debug] Still waiting for response id={rid}... ({wait_count * 5}s)")
+                if wait_count >= 6:  # 30 seconds max
+                    print(f"    [LSP Debug] TIMEOUT waiting for response id={rid}")
+                    return None
+                continue
             if msg.get("id") == rid:
+                if debug and skipped > 0:
+                    print(f"    [LSP Debug] Skipped {skipped} notifications before getting response")
                 return msg.get("result")
+            # Not our response - probably a notification (no id) or different request
+            skipped += 1
+            if debug:
+                method_name = msg.get("method", "unknown")
+                print(f"    [LSP Debug] Skipped message: {method_name}")
 
     def notify(self, method: str, params: dict):
         self._send({"jsonrpc": "2.0", "method": method, "params": params})
@@ -129,11 +167,11 @@ class LSPClient:
             "textDocument": {"uri": uri, "languageId": languageId, "version": 1, "text": text}
         })
 
-    def definition(self, uri: str, pos: dict):
+    def definition(self, uri: str, pos: dict, debug: bool = False):
         return self.request("textDocument/definition", {
             "textDocument": {"uri": uri},
             "position": pos
-        })
+        }, debug=debug)
 
     def references(self, uri: str, pos: dict, include_decl: bool = False):
         return self.request("textDocument/references", {

@@ -5,14 +5,13 @@ from dotenv import load_dotenv, find_dotenv
 from langchain_chroma import Chroma
 from ollama import chat, ChatResponse
 
-from core.code_indexing import CodeIndexer
-from prompt_query import RAG_PROMPT
-from vectorization.process_graph import index_graph_into_vectors, node_text, _to_fs_path
-from lsp.lsp_edges import build_span_index, add_imports_edges, add_calls_edges, _uri_to_path
-from lsp.lsp_manager import LSPManager
-from core.graph_model import NodeLabel
-from languages.language_config import ENABLED_LANGUAGES
-from vectorization.class_header_extractor import ClassHeaderExtractor
+from .core.code_indexing import CodeIndexer
+from .prompt_query import RAG_PROMPT
+from .vectorization.process_graph import index_graph_into_vectors, node_text, _to_fs_path, _get_handler_for_file
+from .lsp.lsp_edges import build_span_index, add_imports_edges, add_calls_edges, _uri_to_path
+from .lsp.lsp_manager import LSPManager
+from .core.graph_model import NodeLabel
+from .languages.language_config import ENABLED_LANGUAGES
 load_dotenv(find_dotenv(usecwd=True))
 
 ALLOWED_LABELS = {NodeLabel.CLASS, NodeLabel.FUNCTION, NodeLabel.METHOD}
@@ -78,8 +77,11 @@ def assemble_context_from_seeds_and_neighbors(KG, seed_docs, neighbor_ids, *, ma
             try:
                 fs_path = _to_fs_path(n.path)
                 file_content = Path(fs_path).read_text(encoding="utf-8")
-                extractor = ClassHeaderExtractor()
-                txt = extractor.extract_header(n, file_content)
+                handler = _get_handler_for_file(fs_path, ENABLED_LANGUAGES)
+                if handler:
+                    txt = handler.extract_class_header(n, file_content)
+                else:
+                    txt = None
                 if not txt:
                     # Fallback: use just class signature
                     txt = node_text(n).split('\n')[0]
@@ -182,10 +184,11 @@ def graphrag_context(KG, vectorstore: Chroma, query: str, *, k_seeds=2, hops=2, 
 
 
 def main():
-    VOYAGE_API_KEY = os.environ.get("VOYAGE_API_KEY")
 
-    persist_directory = str(Path("./chroma_db"))
-    test_directory = str(Path("./example_repos/pacai"))
+    # Use paths relative to this file's location
+    script_dir = Path(__file__).parent
+    persist_directory = str(script_dir / "chroma_db")
+    test_directory = str(script_dir / "example_repos" / "calls_test_cpp")
 
     # 0) Build the KG with multi-language support
     print("Building knowledge graph from code...")
@@ -246,8 +249,8 @@ def main():
         calls_count = add_calls_edges(KG, lsp_manager, span_index, debug=True)
         print(f"  Added {calls_count} CALLS edges")
 
-        # Shutdown all LSP servers
-        lsp_manager.shutdown_all()
+        # Shutdown all LSP servers (keep generated configs for future runs)
+        lsp_manager.shutdown_all(cleanup_generated=True)
         print(f"  Total edges: {len(KG.edges)} (CONTAINS + IMPORTS + CALLS)")
 
         # Write graph to file for debugging
