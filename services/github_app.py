@@ -8,7 +8,6 @@ from dotenv import load_dotenv
 
 # Load environment variables from .env file
 load_dotenv()
-print("GITHUB_APP_ID =", os.getenv("GITHUB_APP_ID"))
 
 
 class GitHubAppService:
