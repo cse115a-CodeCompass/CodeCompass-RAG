@@ -43,6 +43,7 @@ from .docs.summarizers.definition_summarizer import async_summarize_definitions
 from .docs.summarizers.file_summarizer import async_summarize_files
 from .docs.summarizers.module_summarizer import async_summarize_modules
 from .languages.python_handler import PythonHandler
+from .languages.typescript_handler import TypeScriptHandler
 
 
 def print_phase_header(phase_num: int, phase_name: str):
@@ -88,7 +89,10 @@ async def build_knowledge_graph(
     if verbose:
         print(f"Building knowledge graph from {repo_path}...")
 
-    indexer = CodeIndexer(base_dir=repo_path, handlers=[PythonHandler()])
+    indexer = CodeIndexer(
+        base_dir=repo_path,
+        handlers=[PythonHandler(), TypeScriptHandler()]
+    )
     graph = indexer.index_directory()
 
     # Count nodes by type
@@ -196,7 +200,7 @@ async def generate_summaries(
         if verbose:
             print(f"  Added {imports_count} IMPORTS edges")
 
-        lsp_manager.shutdown_all()
+        lsp_manager.shutdown_all(cleanup_generated=False)
 
     except Exception as e:
         print(f"  Warning: Could not build IMPORTS edges: {e}")
@@ -397,7 +401,7 @@ def main():
     # ============================================================================
 
     # Repository to analyze
-    repo_path = "example_repos/pacai"
+    repo_path = "example_repos/zod"
 
     # Output directory for wiki pages
     output_dir = "./wiki"

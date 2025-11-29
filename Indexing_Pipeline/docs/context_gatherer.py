@@ -17,11 +17,11 @@ from dotenv import load_dotenv
 
 from langchain_chroma import Chroma
 
-from core.code_indexing import CodeIndexer
-from core.graph_model import Graph, NodeLabel
-from languages.language_config import ENABLED_LANGUAGES
-from vectorization.process_graph import index_graph_into_vectors, node_text
-from docs.wiki_structure import WikiStructure, WikiPage
+from ..core.code_indexing import CodeIndexer
+from ..core.graph_model import Graph, NodeLabel
+from ..languages.language_config import ENABLED_LANGUAGES
+from ..vectorization.process_graph import index_graph_into_vectors, node_text
+from .wiki_structure import WikiStructure, WikiPage
 
 
 # Constants for context gathering

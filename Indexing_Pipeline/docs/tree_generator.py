@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
 from collections import defaultdict
 
-from core.graph_model import Graph, Node, NodeLabel, EdgeType
+from ..core.graph_model import Graph, Node, NodeLabel, EdgeType
 
 
 class TreeNode:
