@@ -42,8 +42,9 @@ from docs.ia.content_generator import generate_page_markdown
 from docs.ia.page_spec import WikiIA
 
 # Import providers
-from docs.llm.openai_provider import OpenAIProvider
-
+#from docs.llm.openai_provider import OpenAIProvider
+from docs.llm.ollama_provider import OllamaProvider
+from docs.llm.providers import LLMProvider
 
 def print_phase_header(phase_num: int, phase_name: str):
     """Print a formatted phase header."""
@@ -119,7 +120,7 @@ async def build_knowledge_graph(repo_path: str, graph_cache_path: str, rebuild: 
 
 async def generate_summaries(
     graph: Graph,
-    provider: OpenAIProvider,
+    provider: LLMProvider,
     repo_path: str,
     fast_mode: bool,
     verbose: bool
@@ -217,7 +218,7 @@ async def generate_summaries(
 
 async def generate_wiki_ia(
     graph: Graph,
-    provider: OpenAIProvider,
+    provider: LLMProvider,
     repo_path: str,
     no_subpages: bool,
     verbose: bool
@@ -299,7 +300,7 @@ async def generate_wiki_ia(
 async def generate_wiki_content(
     graph: Graph,
     ia: WikiIA,
-    provider: OpenAIProvider,
+    provider: LLMProvider,
     repo_path: str,
     output_dir: str,
     verbose: bool
@@ -393,7 +394,7 @@ def main():
     # ============================================================================
 
     # Repository to analyze
-    repo_path = "example_repos/pacai"
+    repo_path = "./example_repos/pacai"
 
     # Output directory for wiki pages
     output_dir = "./wiki"
@@ -402,7 +403,7 @@ def main():
     graph_cache_path = ".codecompass/graph.json"
 
     # OpenAI configuration
-    model = "gpt-4o-mini"  # Model to use (gpt-4o-mini is cheaper, gpt-4o is higher quality)
+    model = "DeepSeek-r1:14b"  # Model to use (gpt-4o-mini is cheaper, gpt-4o is higher quality)
     max_concurrent = 10    # Max concurrent LLM requests
 
     # Pipeline options
@@ -425,15 +426,19 @@ def main():
     print(f"Mode: {'FAST (short summaries only)' if fast_mode else 'DETAILED (short + detailed)'}")
 
     # Validate environment
-    if not os.getenv('OPENAI_API_KEY'):
-        print("\nERROR: OPENAI_API_KEY environment variable not set")
-        print("Please set it in your .env file or environment")
-        sys.exit(1)
+    #if not os.getenv('OPENAI_API_KEY'):
+    #    print("\nERROR: OPENAI_API_KEY environment variable not set")
+    #    print("Please set it in your .env file or environment")
+    #    sys.exit(1)
 
     # Initialize provider
-    provider = OpenAIProvider(
+    #provider = OpenAIProvider(
+    #    model=model,
+    #    max_concurrent=max_concurrent
+    #)
+
+    provider = OllamaProvider(
         model=model,
-        max_concurrent=max_concurrent
     )
 
     async def run_pipeline():
