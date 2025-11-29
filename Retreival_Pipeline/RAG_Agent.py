@@ -83,12 +83,14 @@ class RAG_Agent:
             Executes the selected tool & returns the retreived context.
 
             Args:
-                tool_name (str):
+                tool_name (str): 
                 query (str): Entered User Query
 
             Returns:
                 Retrieved context (str)
         """
+
+        
 
         return
 
@@ -101,16 +103,26 @@ class RAG_Agent:
 
     def run(self, query: str, chat_history: str):
         """
-            This function is called when the route handler ()
+            This function is called when the route handler (handle_rag_request) executes after the /chat endpoint is hit
+            
+            Args:
+                query (str): Entered User Query
+                chat_history (list): Entire Conversation History
 
+            Returns:
+                The Ollama Generator Object (which is used for streaming the LLM response)
         """
 
+        # Ask Agent which Knowledge Source to retreive Context from
+        selected_tool = self.select_tool(query)
 
+        # Retreive Context from Selected Knowledge Source
+        context = self.dispatch_to_tool(select_tool, query, chat_history)
 
+        # Query the LLM through Ollama with provided context
+        query_llm(query, chat_history, context)
 
         return
-
-
 
 
 # This main() is only for testing purposes
