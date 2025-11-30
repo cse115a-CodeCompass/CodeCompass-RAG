@@ -1,77 +1,76 @@
 # Resource Management
 
 ## Overview
-The Resource Management module is designed to organize and access various resources utilized within the codebase, including boards, fonts, and sprites. This module serves as a centralized hub for managing these resources, allowing developers to efficiently load and utilize them in their applications. By providing a structured approach to resource management, it simplifies the process of accessing and integrating these assets into projects.
-
-Developers would use this module when they need to manage multiple types of resources in a coherent manner. It is particularly useful in game development or graphical applications where various assets must be loaded, accessed, and manipulated. The modular design enhances maintainability and scalability, making it easier to handle resource-related tasks.
-
-## Key Components
-The Resource Management module is primarily composed of several submodules, each responsible for a specific type of resource:
-
-### Boards
-The `boards` submodule provides functionality related to game boards or layouts. It organizes the components necessary for rendering and managing game states on these boards.
-
-### Fonts
-The `fonts` submodule handles font-related resources, allowing for the loading and management of different font styles and sizes. This is essential for rendering text in a visually appealing manner.
-
-### Spritesheets
-The `spritesheets` submodule is responsible for managing sprite sheets, which are collections of images used for animations or character representations. This submodule facilitates the loading and manipulation of these images, streamlining the process of rendering sprites.
-
-### Web UI
-The `webui` submodule encapsulates resources related to web-based user interfaces. It organizes components that are essential for building and managing web UI elements.
-
-Each of these submodules acts as a thin namespace, primarily facilitating the importation and organization of related modules. They do not define any classes or functions directly but serve as entry points for accessing the functionalities of their respective components.
+The Resource Management module is responsible for managing various resources essential for user interfaces, including boards, fonts, and spritesheets. This module serves as a centralized hub for organizing and accessing these resources, facilitating the development of user interfaces in applications. Developers would use this module when they need to efficiently manage and utilize graphical assets, ensuring that their applications can render UI components effectively.
 
 ## Architecture & Design
-The Resource Management module employs a modular architecture, where each submodule is responsible for a specific category of resources. This design pattern promotes separation of concerns, allowing developers to focus on individual resource types without interference from others.
-
-### Key Abstractions
-The primary abstraction in this module is the use of submodules to encapsulate related functionalities. Each submodule acts as a namespace, providing a clean interface for importing and utilizing resources. This modular approach enhances code organization and maintainability.
+The architecture of the Resource Management module is designed to provide a clear structure for managing resources. It employs a modular design pattern, allowing for easy organization and access to different resource types. The module is structured to facilitate the import and export of various components, ensuring that developers can quickly integrate the necessary resources into their applications.
 
 ### Data Flow
-The data flow within the Resource Management module is straightforward. When a developer needs to access a specific resource, they import the relevant submodule and utilize its functionalities to load or manage the resource. This flow ensures that resources are accessed in a structured manner, reducing the risk of errors and improving code clarity.
+The data flow within the module is straightforward, with resources being imported from submodules and utilized in the main application logic. The primary components interact through well-defined interfaces, allowing for efficient resource management.
+
+```mermaid
+graph TD
+    subgraph Resources[Resource Management]
+        A[Boards]
+        B[Fonts]
+        C[Spritesheets]
+        D[WebUI]
+    end
+    Resources -->|uses| A
+    Resources -->|uses| B
+    Resources -->|uses| C
+    Resources -->|interacts with| D
+```
+
+## Key Components
+
+### Main Functions
+- **`apiFailure`**: Handles failed API requests by logging error messages and closing the current context. Returns a rejected promise with the response.
+- **`apiSuccess`**: Processes successful API responses by extracting JSON data and returning it as a resolved Promise.
+- **`close`**: Stops a recurring operation by clearing an interval identified by `intervalID`.
+- **`init`**: Initializes the application, fetching configuration data and setting up a recurring update interval.
+- **`main`**: Initializes the program by registering keys and performing necessary setup.
+- **`makeRequest`**: Makes an HTTP POST request with a JSON-encoded body and returns a promise based on the request outcome.
+- **`registerKeys`**: Tracks key presses by adding an event listener to the window.
+- **`update`**: Collects pressed keys, sends them to a server, and updates the UI based on the server's response.
+
+### Interaction of Components
+The functions within the Resource Management module interact closely, particularly in the context of user input and API interactions. For example, the `init` function sets up the application state, while `registerKeys` tracks user inputs. The `update` function then utilizes this input to communicate with the server, demonstrating a clear flow of data and functionality.
 
 ## Usage Examples
-While the Resource Management module does not define specific classes or functions, developers can utilize the submodules as follows:
+Developers can utilize the Resource Management module in various scenarios, such as initializing a user interface or managing graphical assets. Here are some common use cases:
 
-### Accessing Boards
-To access board-related resources, a developer would import the `boards` submodule and use its functionalities to manage game boards.
+1. **Initializing the Application**:
+   ```javascript
+   init();
+   ```
 
-```python
-from pacai.resources.boards import *
-# Example usage of board functionalities
-```
+2. **Making API Requests**:
+   ```javascript
+   makeRequest('/api/resource', { key: 'value' })
+       .then(apiSuccess)
+       .catch(apiFailure);
+   ```
 
-### Loading Fonts
-For font management, a developer would import the `fonts` submodule to load and utilize various font styles.
+3. **Tracking Key Presses**:
+   ```javascript
+   registerKeys();
+   ```
 
-```python
-from pacai.resources.fonts import *
-# Example usage of font functionalities
-```
+4. **Updating the UI**:
+   ```javascript
+   update();
+   ```
 
-### Working with Spritesheets
-To work with sprite sheets, a developer would import the `spritesheets` submodule, allowing for the loading and manipulation of sprite images.
-
-```python
-from pacai.resources.spritesheets import *
-# Example usage of spritesheet functionalities
-```
-
-### Integrating Web UI
-For web UI components, the `webui` submodule can be imported to access the necessary resources for building user interfaces.
-
-```python
-from pacai.resources.webui import *
-# Example usage of web UI functionalities
-```
+These examples showcase how to leverage the functions within the module to manage resources effectively and interact with the user interface.
 
 ## Important Details
-### Configuration Requirements
-No specific configuration is required to use the Resource Management module. However, developers should ensure that all necessary resource files (boards, fonts, sprites, etc.) are correctly placed within their respective directories for seamless access.
+### Configuration or Setup Requirements
+While the Resource Management module does not specify any complex configuration requirements, it is essential to ensure that the necessary submodules (boards, fonts, spritesheets, and webui) are correctly imported and initialized to utilize the full functionality of the module.
 
 ### Caveats
-- Since the `__init__.py` files in each submodule do not define any classes or functions, developers must be familiar with the specific functionalities offered by the underlying modules to effectively utilize this resource management system.
-- The modular design may require developers to import multiple submodules if their application relies on various resource types, which could lead to increased import statements.
+- Ensure that API endpoints are correctly defined and accessible to avoid issues with the `makeRequest` function.
+- Be mindful of the state management when using the `update` function, as it relies on the current state of pressed keys and server responses.
 
-By adhering to the structured approach provided by the Resource Management module, developers can efficiently manage and access resources, enhancing the overall organization and maintainability of their codebase.
+This documentation provides a comprehensive overview of the Resource Management module, detailing its architecture, key components, usage examples, and important considerations for developers.

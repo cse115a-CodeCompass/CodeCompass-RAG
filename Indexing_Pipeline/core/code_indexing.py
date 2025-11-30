@@ -110,9 +110,8 @@ class CodeIndexer:
         try:
             rel_path = path.resolve().relative_to(self.base_dir)
             rel_path_str = str(rel_path).replace("\\", "/")
-            # Handle repo root folder
-            if rel_path_str == ".":
-                rel_path_str = path.name or "root"
+            # Keep "." for root - don't replace with folder name to avoid
+            # collisions when repo name matches a subfolder (e.g., pacai/pacai)
         except ValueError:
             # Path outside repo - use just the name
             rel_path_str = path.name

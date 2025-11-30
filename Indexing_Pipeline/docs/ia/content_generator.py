@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Dict, List, Optional
 from Indexing_Pipeline.core.graph_model import Graph
 from Indexing_Pipeline.docs.ia.content_prompts import get_prompt_for_page
 from Indexing_Pipeline.docs.ia.context_builder import build_page_context
+from Indexing_Pipeline.docs.ia.mermaid_repair import repair_mermaid_in_markdown
 from Indexing_Pipeline.docs.ia.page_spec import PageSpec, WikiIA
 from Indexing_Pipeline.docs.llm.providers import LLMProvider
 
@@ -28,6 +29,10 @@ async def generate_page_markdown(
 ) -> str:
     """
     Generate markdown content for a single wiki page.
+
+    Mermaid diagrams are generated inline as part of the content - each page type's
+    prompt includes specific diagram requirements so the LLM can generate contextually
+    appropriate diagrams with full access to the page context.
 
     Args:
         graph: Knowledge graph with summaries
@@ -89,7 +94,24 @@ async def generate_page_markdown(
     if not success or not markdown:
         raise RuntimeError(f"Failed to generate content for '{page.slug}': {error}")
 
-    return markdown.strip()
+    markdown = markdown.strip()
+
+    # Repair any Mermaid syntax issues (cross-subgraph references, etc.)
+    # If diagram can't be fixed, it will be removed to prevent broken renders
+    repaired_markdown, fixes = repair_mermaid_in_markdown(markdown, remove_on_failure=True)
+    if fixes and verbose:
+        # Check if diagram was removed (fallback triggered)
+        removed = any("REMOVED:" in f for f in fixes)
+        if removed:
+            print(f"    WARNING: Mermaid diagram removed from {page.slug} (unfixable)")
+        else:
+            # Filter out "No mermaid block found" messages
+            actual_fixes = [f for f in fixes if f != "No mermaid block found"]
+            if actual_fixes:
+                print(f"    Mermaid repairs for {page.slug}: {actual_fixes}")
+    markdown = repaired_markdown
+
+    return markdown
 
 
 async def generate_all_pages(
@@ -103,6 +125,8 @@ async def generate_all_pages(
 ) -> Dict[str, str]:
     """
     Generate markdown for all pages in the wiki IA.
+
+    Mermaid diagrams are generated inline within each page's content prompt.
 
     Args:
         graph: Knowledge graph with summaries
@@ -225,7 +249,7 @@ async def generate_wiki(
     """
     Complete wiki generation pipeline.
 
-    1. Generate markdown for all pages
+    1. Generate markdown for all pages (with inline Mermaid diagrams)
     2. Save to wiki/ directory
 
     Args:

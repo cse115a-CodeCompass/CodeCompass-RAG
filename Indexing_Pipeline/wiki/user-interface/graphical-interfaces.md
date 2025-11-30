@@ -1,113 +1,80 @@
 # Graphical Interfaces with Tkinter
 
 ## Overview
+The `TkUI` module is responsible for creating and managing graphical user interfaces (GUIs) for games using the Tkinter library. It provides a structured approach to handle the lifecycle of a game window, including initialization, rendering, and cleanup, while also managing user interactions through keyboard events. Developers would use this module when they want to implement a graphical interface for their games, leveraging Tkinter's capabilities to create responsive and visually appealing applications.
 
-The `pacai.ui` module provides a comprehensive framework for implementing graphical user interfaces (GUIs) in Python applications, particularly for games. It leverages the `TkUI` class for managing a Tkinter-based interface, facilitating window management, event handling, and user interaction. This module is essential for developers looking to create interactive applications that require a visual representation of game states, user input processing, and dynamic updates to the interface.
+This module is particularly useful for developers looking to integrate a GUI into their Python games without the overhead of complex frameworks. It allows for easy management of game states and user inputs, making it suitable for both simple and more complex game designs.
 
-Developers would use this module when building games or applications that benefit from a graphical interface, allowing users to interact with the application through visual elements rather than text-based input alone. The integration of various UI components, such as `TextUI`, `NullUI`, and web-based interfaces, provides flexibility in how user interactions can be handled across different platforms.
+## Architecture & Design
+The `TkUI` module employs an event-driven design pattern, which is common in GUI applications. This pattern allows the application to respond to user inputs and system events asynchronously. The key abstractions in this module include classes for managing user input (`TkUserInputDevice`), rendering the game interface (`TkUI`), and handling game states.
+
+### Data Flow
+The data flow within the module primarily revolves around user inputs being captured, processed, and then reflected in the GUI. User actions are translated into game commands, which update the game state and trigger visual updates in the interface.
+
+```mermaid
+graph TD
+    subgraph GUI[Graphical User Interface]
+        A[TkUI]
+        B[TkUserInputDevice]
+        C[NullUI]
+    end
+    subgraph Web[Web Interface]
+        D[WebUI]
+        E[HTTPHandler]
+    end
+    GUI -->|uses| B
+    GUI -->|renders| C
+    Web -->|handles| E
+    E -->|interacts with| D
+```
 
 ## Key Components
 
 ### Main Classes
-
-- **TkUI**: The primary class for managing a Tkinter-based GUI. It handles window initialization, game state management, and user interactions. Key methods include:
-  - `__init__`: Initializes the Tkinter window and sets up attributes.
-  - `draw`: Updates the graphical representation of the game state.
-  - `game_start` and `game_complete`: Manage the lifecycle of the game interface.
-
-- **TkUserInputDevice**: Manages user input through keyboard events in a Tkinter application. It captures key presses and maps them to actions.
-  - `get_inputs`: Retrieves and clears the list of actions based on user input.
-
-- **NullUI**: A minimalistic UI that allows for game state rendering without graphical sprites. It is useful for scenarios where a graphical interface is not required.
-  - `draw`: Visualizes the current game state.
-
-- **TextUI**: Facilitates user interaction through standard input and output streams, rendering game information in a text-based format.
-  - `draw`: Visualizes the game state using a `GameState` object.
-
-- **WebUI**: Manages a web-based user interface, handling HTTP requests and responses while allowing for real-time updates.
-  - `game_start`: Initializes the game and starts the server for web interactions.
+- **TkUI**: Manages the game window's lifecycle, including initialization, rendering, and cleanup. It handles window events and updates the visual representation of the game state.
+- **TkUserInputDevice**: Captures and processes keyboard inputs from the Tkinter interface, mapping key events to specific actions.
+- **NullUI**: Provides a minimalist interface for rendering the game state without requiring sprite resources, focusing solely on visual output.
+- **WebUI**: Manages web-based interactions for games, including server operations and user input handling through a web interface.
+- **HTTPHandler**: Handles HTTP requests and responses, managing game state data and images in a web application context.
 
 ### Important Functions
+- **_cleanup_tk_window**: Cleans up a specified Tkinter window by destroying it and updating global variables related to open windows.
+- **_find_open_port**: Searches for an available network port and returns the first open port found.
+- **_get_tk_window**: Manages the creation of a Tkinter window, initializing a main window if none exists.
+- **_run_server**: Starts an HTTP server on the current thread, ensuring it is ready for connections.
 
-- **_cleanup_tk_window**: Cleans up a specified Tkinter window and updates global counters.
-- **_find_open_port**: Searches for an available TCP port for the web server.
-- **_get_tk_window**: Retrieves a Tkinter window, managing the creation of new windows.
-- **_watch_text_stream**: Monitors a text stream for incoming characters, facilitating real-time input processing.
-
-### Component Interaction
-
-The components interact through a structured flow where the `TkUI` class serves as the main interface for user interactions. It utilizes `TkUserInputDevice` to capture keyboard events and `TextUI` for rendering game states in a text format when needed. The `WebUI` class can be employed for web-based interactions, allowing users to engage with the game through a browser. The `NullUI` class provides a fallback for scenarios where graphical representation is not necessary, ensuring that the game can still function without a full GUI.
-
-## Architecture & Design
-
-### Design Patterns Used
-
-The module employs several design patterns, including:
-
-- **Event-Driven Programming**: The `TkUserInputDevice` and `TkUI` classes utilize event-driven patterns to handle user input and window events, allowing for responsive interactions.
-- **Threading**: The `WebUI` class runs an HTTP server in a separate thread, enabling concurrent handling of user requests and game state updates.
-
-### Key Abstractions or Interfaces
-
-The primary abstractions in this module include:
-
-- **User Input Devices**: Classes like `TkUserInputDevice`, `TextStreamUserInputDevice`, and `WebUserInputDevice` abstract the handling of user input, allowing for different input methods while maintaining a consistent interface for the main application.
-- **User Interface Classes**: `TkUI`, `TextUI`, and `NullUI` provide various ways to present the game state to the user, catering to different environments and requirements.
-
-### Data Flow or Control Flow
-
-Data flows through the system as follows:
-
-1. User input is captured by the respective input device (e.g., `TkUserInputDevice` for keyboard events).
-2. The input device processes the input and maps it to actions.
-3. The `TkUI` class updates the game state based on the actions received and redraws the interface.
-4. For web interactions, the `WebUI` class handles HTTP requests, updating the game state and responding with the appropriate data.
+### Component Interactions
+The `TkUI` class interacts with `TkUserInputDevice` to capture user inputs, which are then processed and reflected in the game state. The `NullUI` class can be used for simple visual representation when sprite resources are not needed. In the web context, `WebUI` and `HTTPHandler` work together to manage user interactions and serve game visuals over HTTP.
 
 ## Usage Examples
-
 ### Common Use Cases
+1. **Creating a Game Window**: Initialize a `TkUI` instance to create a game window, set its title, and configure dimensions.
+2. **Handling User Inputs**: Use `TkUserInputDevice` to map keyboard events to game actions, allowing for real-time interaction.
+3. **Rendering Game State**: Call the `draw` method of `TkUI` to update the visual representation of the game based on the current state.
 
-1. **Creating a Game Interface**: To create a graphical interface for a game, instantiate the `TkUI` class, set up the game state, and call the `game_start` method to initialize the interface.
-   
-   ```python
-   from pacai.ui.tk import TkUI
+### Example Code Snippet
+```python
+from pacai.ui.tk import TkUI
 
-   ui = TkUI(title="My Game")
-   ui.game_start(initial_state)
-   ```
+# Initialize the TkUI
+game_ui = TkUI(title="My Game")
 
-2. **Handling User Input**: Use the `TkUserInputDevice` to capture keyboard events and process user actions.
+# Start the game
+game_ui.game_start(initial_state)
 
-   ```python
-   input_device = TkUserInputDevice()
-   input_device.register_root(ui.window)
-   actions = input_device.get_inputs()
-   ```
-
-3. **Web-Based Interaction**: For a web-based game, use the `WebUI` class to manage user interactions through a browser.
-
-   ```python
-   from pacai.ui.web import WebUI
-
-   web_ui = WebUI()
-   web_ui.game_start(initial_state)
-   ```
-
-### Integration Points with Other Modules
-
-The `pacai.ui` module integrates seamlessly with other components of the `pacai` framework, such as game logic and state management. It can be combined with backend logic to facilitate real-time updates and interactions, ensuring a cohesive user experience across different platforms.
+# Main game loop
+while game_running:
+    game_ui.draw(current_game_state)
+```
 
 ## Important Details
-
 ### Configuration or Setup Requirements
-
 - Ensure that the Tkinter library is installed and properly configured in your Python environment.
-- For web-based interfaces, ensure that the necessary networking permissions are granted, and the server can bind to the required ports.
+- When using the web components, ensure that the necessary networking permissions are granted for HTTP server operations.
 
-### Caveats, Gotchas, or Important Notes
+### Caveats and Important Notes
+- The `NullUI` class does not support sprite rendering, so it should only be used in scenarios where minimal visual output is acceptable.
+- The `TkUserInputDevice` relies on the Tkinter event loop, which must be running for input handling to function correctly.
+- When integrating with web components, be aware of potential threading issues and ensure that the server is properly managed to avoid resource leaks.
 
-- Be cautious with threading when using the `WebUI` class; ensure that shared resources are properly synchronized to avoid race conditions.
-- The `NullUI` class is a lightweight alternative but may not provide the full range of user interactions available in graphical interfaces.
-- When using `TkUI`, be mindful of the event loop and the need to manage window closure and cleanup properly to avoid resource leaks.
-
-This module provides a robust foundation for developing graphical interfaces in Python applications, particularly for games, offering flexibility and ease of integration with various input methods and display options.
+This documentation provides a comprehensive overview of the `TkUI` module, detailing its architecture, key components, usage examples, and important considerations for developers looking to implement graphical interfaces in their Python games.

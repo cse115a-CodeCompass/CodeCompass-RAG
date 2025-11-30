@@ -373,7 +373,7 @@ class ContextGatherer:
         """Convert path (URI or filesystem) to absolute filesystem path."""
         if path.startswith("file://"):
             # Convert URI to filesystem path
-            from lsp.lsp_edges import _uri_to_path
+            from ..lsp.lsp_edges import _uri_to_path
             return str(_uri_to_path(path))
         else:
             # Already filesystem path, make absolute

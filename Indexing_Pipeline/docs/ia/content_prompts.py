@@ -6,6 +6,132 @@ Different prompts for different page kinds to generate appropriate content style
 
 from Indexing_Pipeline.docs.ia.context_builder import PageContext
 
+# =============================================================================
+# MERMAID DIAGRAM GUIDELINES (Shared)
+# =============================================================================
+
+MERMAID_GENERAL_GUIDELINES = """
+## Mermaid Diagram Guidelines
+
+**General Rules:**
+- Diagrams must be accurate and directly derived from the provided context
+- Do NOT invent modules, classes, functions, or relationships not in the context
+- If there is not enough information for a meaningful diagram, omit it
+- Maximum ~20 nodes per diagram; prioritize key components
+- Node labels should be concise: 3-4 words maximum
+- Use clear node IDs without spaces (e.g., `CoreService`, `AuthModule`)
+- For longer labels, use syntax: `nodeId["My Label"]`
+
+**CRITICAL Syntax Rules:**
+- Each node ID must be defined exactly ONCE in the entire diagram
+- Do NOT reference a node defined in one subgraph from inside another subgraph
+- For cross-subgraph relationships, use subgraph-to-subgraph edges:
+  `SubgraphA -->|uses| SubgraphB`
+- Keep nodes simple: `A[Label]` - avoid complex nesting
+- Prefer flat structure over deeply nested subgraphs
+"""
+
+MERMAID_FLOWCHART_GUIDELINES = """
+**Flowchart/Graph Diagram Rules:**
+- Use `graph TD` (top-down) for vertical orientation - NEVER use `graph LR`
+- Use labeled edges where useful: `-->|uses|`, `-->|calls|`, `-->|returns|`
+- Group related components with subgraphs if helpful
+- Keep to 5-8 key components
+
+**Correct structure:**
+```mermaid
+graph TD
+    subgraph Core[Core Module]
+        A[ClassA]
+        B[ClassB]
+        A -->|uses| B
+    end
+    subgraph Games[Game Implementations]
+        C[Game1]
+        D[Game2]
+    end
+    Games -->|depends on| Core
+```
+
+**INCORRECT (DO NOT DO THIS):**
+```mermaid
+graph TD
+    subgraph Core[Core]
+        A[ClassA]
+    end
+    subgraph Other[Other]
+        A -->|bad| B  %% ERROR: A is defined in Core, cannot use inside Other
+    end
+```
+"""
+
+MERMAID_SEQUENCE_GUIDELINES = """
+**Sequence Diagram Rules:**
+- First line must be exactly: `sequenceDiagram`
+- Immediately add `autonumber` to show message order
+- Define ALL participants at the beginning using `participant` keyword
+- Use concise names or aliases: `participant A as AuthService`
+
+**Arrow Syntax (NOT flowchart-style):**
+- `->>` solid line with arrowhead (requests/calls)
+- `-->>` dotted line with arrowhead (responses/returns)
+- `->x` solid line with X (error/failed)
+- `-)` solid line with open arrow (async, fire-and-forget)
+- NEVER use flowchart-style labels like `A--|label|-->B`
+- Always use colon for labels: `A->>B: My Label`
+
+**Activation boxes:**
+- `A->>+B: Start` (activate B)
+- `B-->>-A: End` (deactivate B)
+
+**Structural elements:**
+- `loop LoopText ... end`
+- `alt ConditionText ... else ... end`
+- `opt OptionalText ... end`
+- `par ParallelText ... and ... end`
+
+**Example:**
+```mermaid
+sequenceDiagram
+    autonumber
+    participant U as User
+    participant C as Controller
+    participant S as Service
+    U->>+C: request()
+    C->>+S: process()
+    S-->>-C: result
+    C-->>-U: response
+```
+"""
+
+MERMAID_CLASS_GUIDELINES = """
+**Class Diagram Rules:**
+- Use `classDiagram` to represent classes, methods, and relationships
+- Show inheritance with `<|--`
+- Show composition/aggregation with `*--` or `o--`
+- Include 2-3 key methods per class (use `+` for public, `-` for private)
+- Show relationships with labeled arrows: `--> : uses`
+- Keep to 5-8 key classes; focus on central components
+
+**Example:**
+```mermaid
+classDiagram
+    class BaseClass {{
+        +method1()
+        +method2()
+    }}
+    class DerivedClass {{
+        +specialMethod()
+    }}
+    BaseClass <|-- DerivedClass
+    DerivedClass --> Helper : uses
+```
+"""
+
+# =============================================================================
+# SYSTEM PROMPT
+# =============================================================================
+
 # System prompt used for all page types
 SYSTEM_PROMPT = """You are an expert technical writer creating clear, accurate documentation for a Python codebase.
 
@@ -56,10 +182,11 @@ Write a comprehensive Markdown page that:
    - What problems does it solve?
    - Who is it for?
 
-2. **Architecture Overview** (2-3 paragraphs)
+2. **Architecture Overview** (2-3 paragraphs + diagram)
    - What are the main components/subsystems?
    - How do they fit together?
    - What are the key design patterns or architectural choices?
+   - **Include a Mermaid diagram** showing the high-level module architecture
 
 3. **Key Modules** (organized section)
    - Brief description of each major module and its purpose
@@ -69,6 +196,12 @@ Write a comprehensive Markdown page that:
    - Where should a new contributor start?
    - What are the most important files or classes to understand first?
 
+{MERMAID_GENERAL_GUIDELINES}
+
+{MERMAID_FLOWCHART_GUIDELINES}
+
+**For this page:** In section 2, include a `graph TD` diagram showing main modules as subgraphs or simple nodes. Use short, descriptive names from the modules listed above.
+
 ## Guidelines
 
 - Use `#` for the page title, `##` for major sections, `###` for subsections
@@ -76,6 +209,7 @@ Write a comprehensive Markdown page that:
 - Focus on the big picture, not implementation details
 - Only reference modules, classes, and files mentioned in the context above
 - DO NOT hallucinate or invent features not mentioned in the context
+- Place the Mermaid diagram in the Architecture Overview section, after the text explanation
 
 Generate the complete Markdown page now."""
 
@@ -104,15 +238,16 @@ Write a comprehensive Markdown page that documents this module in depth:
    - What is this module responsible for?
    - When and why would a developer use it?
 
-2. **Key Components**
-   - Main classes and their responsibilities
-   - Important functions and what they do
-   - How components interact with each other
-
-3. **Architecture & Design**
+2. **Architecture & Design** (with diagram)
    - Design patterns used
    - Key abstractions or interfaces
    - Data flow or control flow
+   - **Include a Mermaid diagram** showing the module's architecture
+
+3. **Key Components**
+   - Main classes and their responsibilities
+   - Important functions and what they do
+   - How components interact with each other
 
 4. **Usage Examples** (if applicable)
    - Common use cases
@@ -123,6 +258,14 @@ Write a comprehensive Markdown page that documents this module in depth:
    - Configuration or setup requirements
    - Caveats, gotchas, or important notes
 
+{MERMAID_GENERAL_GUIDELINES}
+
+{MERMAID_FLOWCHART_GUIDELINES}
+
+{MERMAID_CLASS_GUIDELINES}
+
+**For this page:** In section 2, include a `graph TD` or `classDiagram` showing main classes/functions and how they interact. Use actual names from the context above.
+
 ## Guidelines
 
 - Use `#` for the page title, `##` for major sections, `###` for subsections
@@ -130,6 +273,7 @@ Write a comprehensive Markdown page that documents this module in depth:
 - Do NOT invent new APIs or features
 - Keep to 1000-1500 words
 - Be specific and technical (assume reader knows Python)
+- Place the Mermaid diagram in the Architecture section
 
 Generate the complete Markdown page now."""
 
@@ -175,6 +319,12 @@ Write a practical, tutorial-style Markdown guide that:
    - Things to watch out for
    - Common mistakes and how to avoid them
 
+{MERMAID_GENERAL_GUIDELINES}
+
+{MERMAID_SEQUENCE_GUIDELINES}
+
+**For this page:** In the Concepts section, include a `sequenceDiagram` showing the typical workflow or interaction pattern. Focus on the core flow (max 10-15 messages).
+
 ## Guidelines
 
 - Use `#` for the page title, `##` for major sections, `###` for subsections
@@ -182,6 +332,7 @@ Write a practical, tutorial-style Markdown guide that:
 - Only use classes/functions that appear in the context
 - Keep to 800-1200 words
 - Use code snippets (simple examples, not full implementations)
+- Place the Mermaid diagram in the Concepts section to illustrate the flow
 
 Generate the complete Markdown page now."""
 
@@ -226,6 +377,12 @@ Write a detailed API reference page in Markdown:
    - Common patterns for using these APIs
    - How different classes/functions work together
 
+{MERMAID_GENERAL_GUIDELINES}
+
+{MERMAID_CLASS_GUIDELINES}
+
+**For this page:** Include a `classDiagram` showing relationships between main classes. Focus on inheritance, composition, and key methods.
+
 ## Guidelines
 
 - Use `#` for the page title, `##` for major sections, `###` for class/function names
@@ -234,6 +391,7 @@ Write a detailed API reference page in Markdown:
 - Only document APIs that appear in the context
 - Keep to 1000-1500 words
 - Focus on "what" and "when", not "how" (implementation details)
+- Place the Mermaid class diagram after the Classes section
 
 Generate the complete Markdown page now."""
 
@@ -276,13 +434,19 @@ Write an architectural overview page in Markdown:
    - Why was it designed this way?
    - Trade-offs and considerations
 
+{MERMAID_GENERAL_GUIDELINES}
+
+{MERMAID_FLOWCHART_GUIDELINES}
+
+**For this page:** In the Architecture section, include a `graph TD` diagram showing main components and their interactions. Group related components with subgraphs.
+
 ## Guidelines
 
 - Use `#` for the page title, `##` for major sections, `###` for subsections
 - Focus on design and structure, not implementation
 - Reference actual classes/interfaces from the context
-- Use diagrams if helpful (Mermaid syntax)
 - Keep to 800-1200 words
+- Place the Mermaid diagram in the Architecture section
 
 Generate the complete Markdown page now."""
 
@@ -324,6 +488,12 @@ Write a conceptual explanation page in Markdown:
    - Concrete examples showing the concept in action
    - Common usage patterns
 
+{MERMAID_GENERAL_GUIDELINES}
+
+{MERMAID_FLOWCHART_GUIDELINES}
+
+**For this page:** In the "How It Works" section, include a `graph TD` diagram showing data/control flow. Highlight key decision points with diamond shapes `{{{{}}}}`.
+
 ## Guidelines
 
 - Use `#` for the page title, `##` for major sections, `###` for subsections
@@ -331,6 +501,7 @@ Write a conceptual explanation page in Markdown:
 - Reference actual symbols from the context
 - Keep to 800-1200 words
 - Balance theory with practical examples
+- Place the Mermaid diagram in the "How It Works" section
 
 Generate the complete Markdown page now."""
 

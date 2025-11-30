@@ -94,6 +94,10 @@ async def build_knowledge_graph(
         handlers=[PythonHandler(), TypeScriptHandler()]
     )
     graph = indexer.index_directory()
+    with open("graph_doc.txt", "w", encoding='utf-8') as f:
+        f.write(f"Nodes: {len(graph.nodes)}  Edges: {len(graph.edges)}\n")
+        for e in graph.edges:
+            f.write(str(e.src) + " -> " + str(e.dst) + "\n")
 
     # Count nodes by type
     folder_nodes = [n for n in graph.nodes.values() if n.label == NodeLabel.FOLDER]
@@ -191,8 +195,8 @@ async def generate_summaries(
         print("Building IMPORTS edges for module architecture...")
 
     try:
-        from lsp.lsp_edges import add_imports_edges
-        from lsp.lsp_manager import LSPManager
+        from .lsp.lsp_edges import add_imports_edges
+        from .lsp.lsp_manager import LSPManager
 
         lsp_manager = LSPManager(handlers=[PythonHandler()], root_dir=repo_path)
 
@@ -312,6 +316,9 @@ async def generate_wiki_content(
     """
     Generate markdown content for all wiki pages.
 
+    Mermaid diagrams are generated inline within the content prompts, giving the LLM
+    full context to create semantically meaningful diagrams.
+
     Args:
         graph: Knowledge graph (should have summaries loaded)
         ia: Wiki information architecture
@@ -359,7 +366,7 @@ async def generate_wiki_content(
                 if i % 5 == 0 or i == len(pages):
                     print(f"  Progress: {i}/{len(pages)} pages")
 
-            # Generate markdown
+            # Generate markdown (diagrams are generated inline in content prompts)
             markdown = await generate_page_markdown(
                 graph=graph,
                 page=page,
@@ -401,7 +408,9 @@ def main():
     # ============================================================================
 
     # Repository to analyze
-    repo_path = "example_repos/zod"
+     # Use paths relative to this file's location
+    script_dir = Path(__file__).parent
+    repo_path = str(script_dir / "example_repos" / "pacai")
 
     # Output directory for wiki pages
     output_dir = "./wiki"

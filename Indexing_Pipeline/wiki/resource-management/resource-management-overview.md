@@ -2,42 +2,53 @@
 
 ## Introduction
 
-The Resource Management system within this project is designed to efficiently organize and manage various resources required for application functionality. It addresses the challenges of resource allocation, ensuring that components such as boards, fonts, spritesheets, and web user interfaces are systematically structured and easily accessible. This modular approach not only enhances maintainability but also improves the overall user experience by providing a cohesive framework for resource management.
+The resource management system is a critical component of the project, designed to efficiently handle various resources such as boards, fonts, and spritesheets. This system addresses the challenges of organizing and managing these resources, ensuring that they are easily accessible and usable within the application. By streamlining resource management, the project enhances performance and usability, making it more effective for developers and end-users alike.
 
-This project is aimed at developers who are building applications that require a robust resource management system. By offering a clear and organized structure, it allows developers to focus on building features without getting bogged down by the complexities of resource handling.
+This project is aimed at developers who need a robust solution for managing graphical resources in their applications. It provides a structured approach to resource handling, allowing for better organization and integration of assets, which is essential for creating visually rich applications.
 
 ## Architecture Overview
 
-The architecture of the Resource Management system is built around several interconnected subsystems, each responsible for a specific type of resource. These subsystems include `boards`, `fonts`, `spritesheets`, and `webui`, all of which are encapsulated within the `pacai/resources/` module. Each subsystem is designed to function independently while still integrating seamlessly with others, promoting a modular design that enhances both usability and scalability.
+The resource management system is composed of several key modules, each responsible for managing different types of resources. The main components include:
 
-The key architectural choice in this system is the use of thin namespaces via `__init__.py` files across each subsystem. These files do not define any classes or functions themselves but serve as entry points for their respective modules. This design pattern allows for streamlined imports and access to functionalities, making it easier for developers to utilize the resources without navigating through multiple files. The organization of these modules fosters a clear structure that enhances the maintainability of the codebase.
+- **Boards Module**: Responsible for managing board resources, which may include layouts or game boards.
+- **Fonts Module**: Handles font resources, allowing for the integration of various text styles within the application.
+- **Spritesheets Module**: Manages spritesheets, which are collections of images used for animations and graphical elements.
+- **Web UI Module**: Facilitates interactions with the user interface, handling events and API requests.
+
+These modules are organized to promote a clean architecture, where each module serves a specific purpose while remaining interconnected. The design choice of using separate modules allows for better maintainability and scalability, enabling developers to extend functionality as needed.
+
+```mermaid
+graph TD
+    subgraph Resources[Resource Management]
+        A[Boards Module]
+        B[Fonts Module]
+        C[Spritesheets Module]
+        D[Web UI Module]
+    end
+    Resources -->|uses| A
+    Resources -->|uses| B
+    Resources -->|uses| C
+    Resources -->|interacts with| D
+```
 
 ## Key Modules
 
-### pacai/resources/
+### Boards Module
+The Boards module is responsible for managing board resources, which may include layouts or configurations for games or applications. It serves as a foundational component that other modules can rely on for board-related functionalities.
 
-The main package that encapsulates all resource management functionalities. It organizes related modules and facilitates access to various resource types.
+### Fonts Module
+The Fonts module handles various font resources, allowing developers to easily integrate different text styles into their applications. This module ensures that text rendering is consistent and customizable across the application.
 
-### pacai/resources/boards/
+### Spritesheets Module
+The Spritesheets module manages collections of images used for animations and graphical elements. By organizing spritesheets effectively, this module enhances the visual performance of the application and simplifies the process of loading and using graphical assets.
 
-This module is dedicated to managing board resources. It serves as an entry point for functionalities related to boards, allowing for easy access and integration with other resource types.
+### Web UI Module
+The Web UI module serves as the interface for user interactions, managing key events and API requests. It plays a crucial role in ensuring that the application responds smoothly to user inputs and updates the UI based on server interactions.
 
-### pacai/resources/fonts/
-
-The fonts module focuses on handling font resources. Similar to the boards module, it provides a structured way to access font-related functionalities, ensuring that font management is streamlined and efficient.
-
-### pacai/resources/spritesheets/
-
-This module is responsible for managing spritesheet resources. It acts as a centralized location for accessing and utilizing spritesheets, which are essential for graphical representations in applications.
-
-### pacai/resources/webui/
-
-The webui module manages resources related to the web user interface. It serves as an entry point for functionalities that enhance the user experience in web applications, ensuring that UI components are organized and accessible.
-
-Each of these modules is designed to work independently while still being part of a cohesive resource management system. The thin namespace structure provided by their respective `__init__.py` files allows for easy re-exporting of symbols, facilitating a clean and organized interface for developers.
+These modules are designed to work together, with the Web UI module interacting with the other resource modules to provide a cohesive user experience.
 
 ## Getting Started
 
-New contributors should begin by familiarizing themselves with the `pacai/resources/` package. Understanding the purpose and functionality of each module within this package is crucial for effective contribution. The `__init__.py` files in each subsystem provide insight into how the modules are organized and how they can be accessed.
+New contributors should start by familiarizing themselves with the `pacai/resources/` package, as it contains the core components of the resource management system. The most important files to understand first are the `__init__.py` files in each module, as they provide an entry point for accessing the functionalities of the respective modules.
 
-It is recommended to start with the `pacai/resources/boards/` and `pacai/resources/fonts/` modules, as these are fundamental to the resource management system. By grasping the structure and functionalities of these key modules, contributors will gain a solid foundation for understanding the entire resource management architecture.
+Additionally, reviewing the `main.js` file in the Web UI module will provide insights into how the application interacts with the user and manages state. Understanding the key functions such as `init`, `registerKeys`, and `update` will be beneficial for grasping the overall flow of the application. By starting with these components, contributors can effectively engage with the resource management system and contribute to its development.
