@@ -10,9 +10,9 @@ This module builds token-efficient context for each wiki page by:
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, Set
+from typing import Dict, List, Set, Tuple
 
-from Indexing_Pipeline.core.graph_model import Graph, Node, NodeLabel
+from Indexing_Pipeline.core.graph_model import EdgeType, Graph, Node, NodeLabel
 from Indexing_Pipeline.docs.ia.page_spec import PageSpec
 
 
@@ -34,6 +34,10 @@ class PageContext:
 
     # Class -> methods mapping for hierarchy
     class_methods: Dict[str, List[Node]] = field(default_factory=dict)
+
+    # Relationships from graph edges (IMPORTS, CALLS)
+    # Format: List of (edge_type, source_name, target_name)
+    relationships: List[Tuple[str, str, str]] = field(default_factory=list)
 
     def get_formatted_context(self) -> str:
         """Format context as a string for LLM prompt."""
@@ -104,6 +108,27 @@ class PageContext:
                 else:
                     lines.append(f"- **`{func.name}`** ({func.path})")
             lines.append("")
+
+        # Relationships section (from graph edges)
+        if self.relationships:
+            lines.append("## Relationships")
+            lines.append("")
+
+            # Group by edge type
+            imports = [(s, t) for (e, s, t) in self.relationships if e == "imports"]
+            calls = [(s, t) for (e, s, t) in self.relationships if e == "calls"]
+
+            if imports:
+                lines.append("**Import Dependencies:**")
+                for src, dst in imports[:20]:  # Cap at 20 imports
+                    lines.append(f"- {src} imports {dst}")
+                lines.append("")
+
+            if calls:
+                lines.append("**Call Relationships:**")
+                for src, dst in calls[:30]:  # Cap at 30 calls
+                    lines.append(f"- {src} calls {dst}")
+                lines.append("")
 
         return "\n".join(lines)
 
@@ -177,6 +202,39 @@ def build_page_context(
     context.classes.sort(key=lambda n: n.name)
     context.functions.sort(key=lambda n: n.name)
 
+    # Extract relationships from graph edges (IMPORTS, CALLS)
+    node_id_set = set(page.node_ids)
+    seen_relationships: Set[Tuple[str, str, str]] = set()
+
+    for edge in graph.edges:
+        # Only include edges where both endpoints are in scope
+        if edge.src not in node_id_set or edge.dst not in node_id_set:
+            continue
+
+        src_node = graph.nodes.get(edge.src)
+        dst_node = graph.nodes.get(edge.dst)
+        if not src_node or not dst_node:
+            continue
+
+        # Skip CONTAINS edges (structural, not semantic)
+        if edge.type == EdgeType.CONTAINS:
+            continue
+
+        # Extract readable names
+        src_name = src_node.name
+        dst_name = dst_node.name
+
+        if edge.type == EdgeType.IMPORTS:
+            rel = ("imports", src_name, dst_name)
+            if rel not in seen_relationships:
+                seen_relationships.add(rel)
+                context.relationships.append(rel)
+        elif edge.type == EdgeType.CALLS:
+            rel = ("calls", src_name, dst_name)
+            if rel not in seen_relationships:
+                seen_relationships.add(rel)
+                context.relationships.append(rel)
+
     if verbose:
         token_est = context.estimate_tokens()
         print(f"  Built context for '{page.slug}':")
@@ -184,6 +242,7 @@ def build_page_context(
         print(f"    Classes: {len(context.classes)}")
         print(f"    Functions: {len(context.functions)}")
         print(f"    Methods: {len(context.methods)}")
+        print(f"    Relationships: {len(context.relationships)}")
         print(f"    Estimated tokens: ~{token_est:,}")
 
     return context
