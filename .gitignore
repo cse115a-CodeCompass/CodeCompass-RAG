@@ -50,12 +50,15 @@ venv.bak/
 
 # Generated Outputs
 chroma_db/
+document_chroma_db/
+kg_store/
 responses.md
 responses_archive.md
 chunks.txt
 graph.txt
 ex.txt
 nul
+
 
 # Test/Example Data (keep examples/ as it contains demo files)
 pacai/
@@ -98,3 +101,4 @@ htmlcov/
 
 # Logs
 *.log
+

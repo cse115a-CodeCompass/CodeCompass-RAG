@@ -21,7 +21,8 @@ class RagRequest(BaseModel):
     userQuery: str
     conversationHistory: list
     selectedModel: str
-
+    user_id: str
+    repo_id: str
 
 # !!! DUMMY ENDPOINT !!!
 ######################################################################
