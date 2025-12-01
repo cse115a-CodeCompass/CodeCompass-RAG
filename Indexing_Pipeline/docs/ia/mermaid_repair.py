@@ -459,6 +459,54 @@ def fix_double_braces(mermaid_code: str) -> Tuple[str, List[str]]:
     return fixed_code, fixes
 
 
+def fix_edge_label_syntax(mermaid_code: str) -> Tuple[str, List[str]]:
+    """
+    Fix incorrect edge label syntax in flowcharts.
+
+    LLMs sometimes use `A -- label --> B` instead of correct `A -->|label| B`.
+    This pattern creates invalid node names with spaces.
+
+    Patterns fixed:
+    - `A -- Yes --> B` → `A -->|Yes| B`
+    - `A -- No --> B` → `A -->|No| B`
+    - `A -- label text --> B` → `A -->|label text| B`
+
+    Returns:
+        Tuple of (fixed_code, list_of_fixes)
+    """
+    diagram_type = get_diagram_type(mermaid_code)
+
+    # Only apply to flowcharts
+    if diagram_type not in ['flowchart', 'unknown']:
+        return mermaid_code, []
+
+    fixes = []
+    lines = mermaid_code.split('\n')
+    fixed_lines = []
+
+    # Pattern: NodeId -- label --> NodeId  or  NodeId -- label --> NodeId[Label]
+    # Captures: (src_node) -- (label) --> (dst_node)
+    edge_label_pattern = r'^(\s*)([A-Za-z_][A-Za-z0-9_]*)\s+--\s+([^-][^>]*?)\s+-->\s*([A-Za-z_][A-Za-z0-9_]*)(.*)$'
+
+    for i, line in enumerate(lines):
+        match = re.match(edge_label_pattern, line)
+        if match:
+            indent = match.group(1)
+            src = match.group(2)
+            label = match.group(3).strip()
+            dst = match.group(4)
+            rest = match.group(5)  # Any trailing content (node definition, etc.)
+
+            # Convert to correct syntax
+            fixed_line = f'{indent}{src} -->|{label}| {dst}{rest}'
+            fixed_lines.append(fixed_line)
+            fixes.append(f"Line {i+1}: Fixed edge label syntax '{src} -- {label} --> {dst}' to '{src} -->|{label}| {dst}'")
+        else:
+            fixed_lines.append(line)
+
+    return '\n'.join(fixed_lines), fixes
+
+
 def find_invalid_edges(mermaid_code: str) -> List[Tuple[int, str, str]]:
     """
     Find edges with invalid syntax (e.g., spaces in node names).
@@ -578,11 +626,12 @@ def repair_mermaid_diagram(mermaid_code: str) -> Tuple[str, List[str]]:
     2. Double curly braces ({{ }} to { })
     3. Flowchart arrow syntax (-->> to -->)
     4. Double arrows
-    5. Invalid edges (spaces in node names, etc.)
-    6. Sequence diagram activations
-    7. Unbalanced subgraphs
-    8. Cross-subgraph edges
-    9. Empty subgraphs
+    5. Edge label syntax (A -- label --> B to A -->|label| B)
+    6. Invalid edges (spaces in node names, etc.)
+    7. Sequence diagram activations
+    8. Unbalanced subgraphs
+    9. Cross-subgraph edges
+    10. Empty subgraphs
 
     Returns:
         Tuple of (repaired_code, list_of_fixes_applied)
@@ -609,11 +658,15 @@ def repair_mermaid_diagram(mermaid_code: str) -> Tuple[str, List[str]]:
     code, fixes = fix_double_arrows(code)
     all_fixes.extend(fixes)
 
-    # Fix 5: Invalid edges (spaces in node names, etc.)
+    # Fix 5: Edge label syntax (A -- label --> B to A -->|label| B)
+    code, fixes = fix_edge_label_syntax(code)
+    all_fixes.extend(fixes)
+
+    # Fix 6: Invalid edges (spaces in node names, etc.)
     code, fixes = fix_invalid_edges(code)
     all_fixes.extend(fixes)
 
-    # Fix 5: Sequence diagram activations
+    # Fix 7: Sequence diagram activations
     code, fixes = fix_sequence_diagram_activations(code)
     all_fixes.extend(fixes)
 

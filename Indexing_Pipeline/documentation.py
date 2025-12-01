@@ -42,8 +42,9 @@ from .docs.summarizers.class_summarizer import async_summarize_classes
 from .docs.summarizers.definition_summarizer import async_summarize_definitions
 from .docs.summarizers.file_summarizer import async_summarize_files
 from .docs.summarizers.module_summarizer import async_summarize_modules
-from .languages.python_handler import PythonHandler
-from .languages.typescript_handler import TypeScriptHandler
+from .languages.language_config import ENABLED_LANGUAGES
+from .lsp.lsp_edges import add_calls_edges, add_imports_edges, build_span_index
+from .lsp.lsp_manager import LSPManager
 
 
 def print_phase_header(phase_num: int, phase_name: str):
@@ -91,9 +92,53 @@ async def build_knowledge_graph(
 
     indexer = CodeIndexer(
         base_dir=repo_path,
-        handlers=[PythonHandler(), TypeScriptHandler()]
+        handlers=ENABLED_LANGUAGES
     )
     graph = indexer.index_directory()
+
+    # Add LSP edges (IMPORTS and CALLS)
+    if verbose:
+        print("Building LSP edges (IMPORTS and CALLS)...")
+
+    try:
+        # Build span index for mapping LSP locations to nodes
+        span_index = build_span_index(graph)
+
+        # Initialize LSP manager with all enabled languages
+        lsp_manager = LSPManager(handlers=ENABLED_LANGUAGES, root_dir=repo_path)
+        lsp_manager.initialize_all(Path(repo_path).resolve().as_uri())
+
+        # Open all files in LSP servers
+        for file_node in [n for n in graph.nodes.values() if n.label == NodeLabel.FILE]:
+            try:
+                client, handler = lsp_manager.get_client_for_file(file_node.path)
+                file_path = Path(file_node.path)
+                text = file_path.read_text(encoding='utf-8')
+                file_uri = file_path.resolve().as_uri()  # Convert to URI for LSP
+                client.did_open(file_uri, handler.get_lsp_language_id(), text)
+            except (KeyError, Exception) as e:
+                # Skip files we can't handle (unsupported extension or read error)
+                if verbose:
+                    print(f"  Skipping {file_node.name}: {e}")
+                continue
+
+        # Add IMPORTS edges
+        imports_count = add_imports_edges(graph, lsp_manager)
+        if verbose:
+            print(f"  Added {imports_count} IMPORTS edges")
+
+        # Add CALLS edges
+        calls_count = add_calls_edges(graph, lsp_manager, span_index)
+        if verbose:
+            print(f"  Added {calls_count} CALLS edges")
+
+        # Cleanup LSP servers
+        lsp_manager.shutdown_all(cleanup_generated=True)
+
+    except Exception as e:
+        print(f"  Warning: Could not build LSP edges: {e}")
+        print("  Graph will only have CONTAINS edges")
+
     with open("graph_doc.txt", "w", encoding='utf-8') as f:
         f.write(f"Nodes: {len(graph.nodes)}  Edges: {len(graph.edges)}\n")
         for e in graph.edges:
@@ -188,28 +233,8 @@ async def generate_summaries(
     )
 
     # Sprint 2 Task 3: Module summaries
+    # Note: IMPORTS and CALLS edges are already built in build_knowledge_graph()
     print_section("Sprint 2 Task 3: Module Summaries")
-
-    # Build IMPORTS edges for module architecture
-    if verbose:
-        print("Building IMPORTS edges for module architecture...")
-
-    try:
-        from .lsp.lsp_edges import add_imports_edges
-        from .lsp.lsp_manager import LSPManager
-
-        lsp_manager = LSPManager(handlers=[PythonHandler()], root_dir=repo_path)
-
-        imports_count = add_imports_edges(graph, lsp_manager)
-        if verbose:
-            print(f"  Added {imports_count} IMPORTS edges")
-
-        lsp_manager.shutdown_all(cleanup_generated=False)
-
-    except Exception as e:
-        print(f"  Warning: Could not build IMPORTS edges: {e}")
-        print("  Module summaries will not include import architecture")
-
     stats = await async_summarize_modules(graph, provider, verbose=verbose)
     all_stats["modules"] = stats
     print(
@@ -410,7 +435,7 @@ def main():
     # Repository to analyze
      # Use paths relative to this file's location
     script_dir = Path(__file__).parent
-    repo_path = str(script_dir / "example_repos" / "pacai")
+    repo_path = str(script_dir / "example_repos" / "typer")
 
     # Output directory for wiki pages
     output_dir = "./wiki"

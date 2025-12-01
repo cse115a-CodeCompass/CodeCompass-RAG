@@ -38,6 +38,17 @@ MERMAID_FLOWCHART_GUIDELINES = """
 - Group related components with subgraphs if helpful
 - Keep to 5-8 key components
 
+**Edge Label Syntax (CRITICAL):**
+- CORRECT: `A -->|label| B` (pipe syntax for labels)
+- INCORRECT: `A -- label --> B` (DO NOT USE - spaces in node names cause errors)
+- For decision diamonds with yes/no branches:
+  - CORRECT: `D{Decision} -->|Yes| E` and `D -->|No| F`
+  - INCORRECT: `D -- Yes --> E` (this creates invalid node "D -- Yes")
+
+**Decision Diamond Syntax:**
+- Use curly braces for decision nodes: `D{Is Valid?}`
+- Connect with labeled edges: `D -->|Yes| Success` and `D -->|No| Error`
+
 **Correct structure:**
 ```mermaid
 graph TD
@@ -53,6 +64,15 @@ graph TD
     Games -->|depends on| Core
 ```
 
+**Decision flow example:**
+```mermaid
+graph TD
+    A[Start] --> B[Process]
+    B --> C{Valid?}
+    C -->|Yes| D[Continue]
+    C -->|No| E[Handle Error]
+```
+
 **INCORRECT (DO NOT DO THIS):**
 ```mermaid
 graph TD
@@ -62,6 +82,12 @@ graph TD
     subgraph Other[Other]
         A -->|bad| B  %% ERROR: A is defined in Core, cannot use inside Other
     end
+```
+
+```mermaid
+graph TD
+    A --> B
+    B -- Yes --> C  %% ERROR: "B -- Yes" is not valid syntax
 ```
 """
 
