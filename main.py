@@ -1,12 +1,16 @@
 """
-This script is a single clear entry point.
+    This script is a single clear entry point.
 
-1. Creates the FastAPI app object
-2. Includes the routers from /api
+    1. Creates the FastAPI app object
+    2. Includes the routers from /api
 
-Command to run Backend for Production:
-    uvicorn app.main:app --host 0.0.0.0 --port 8000
 
+    Command to run Backend for Development:
+        python3 main.py
+
+    Command to run Backend for Production:
+        uvicorn main:app --host 0.0.0.0 --port 8000
+        (run this command in the same directory that contains main.py)
 """
 
 import uvicorn
@@ -14,10 +18,40 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 # import the routers
-from api import routes_chat, routes_documentation, routes_indexing
+from api import routes_chat, routes_documentation#, routes_indexing
 
-app = FastAPI()
+from startup import run_startup_checks
+from contextlib import asynccontextmanager
 
+from dotenv import load_dotenv
+
+load_dotenv()   # Loads .env into OS environment variables
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+        - This is the startup eventhandler, this async func is run only a single time, when the backend is brought up for the first time.
+        - FastAPI automatically runs startup tasks before serving requests.
+
+        - The following Checks are made
+            1. Is Ollama Installed
+                If not install it/prompt User to install it.
+            2. Is a ChromaDB already available
+                If not create a new fresh ChromaDB
+            3. Are Specific Ollama LLM models installed
+                If not install them/prompt User to install the models
+    """
+    print(">>> RUNNING STARTUP CHECKS <<<")
+    await run_startup_checks()
+    print(">>> STARTUP CHECKS COMPLETED <<<")
+
+    yield  # <-- FastAPI starts serving after this line
+
+    print(">>> SHUTDOWN STARTED <<<")
+    # You can also put cleanup logic here
+    print(">>> SHUTDOWN COMPLETE <<<")
+
+app = FastAPI(lifespan=lifespan)
 
 # If you don’t add this, FastAPI never even receives the request.
 # You will see nothing logged in the server.
@@ -33,34 +67,15 @@ app.add_middleware(
 print(">>> CORS MIDDLEWARE INSTALLED <<<")
 
 app.include_router(routes_chat.router)
-app.include_router(routes_indexing.router)
+#app.include_router(routes_indexing.router)
 app.include_router(routes_documentation.router)
 
-# === Setting Up the Ollama Server ====
-import socket  # used for network communication, in our case to ches if Ollama server is running
-import subprocess  # allows running system commands(like starting the Ollama Server)
-import time  # provides time related funcs like sleep()
-
-
-def is_ollama_running(host="127.0.0.1", port=11434):
-    try:
-        with socket.create_connection((host, port), timeout=1):
-            return True
-    except OSError:
-        return False
-
-
 if __name__ == "__main__":
-    # Start Ollama if it's not already running
-    if not is_ollama_running():
-        try:
-            subprocess.Popen(
-                ["ollama", "serve"]
-            )  # starts the Ollama server using subprocess
-            time.sleep(2)  # waits 2 seconds to allow the server to start
-        except FileNotFoundError:
-            raise RuntimeError(
-                "Ollama not found. Make sure it's installed and in PATH."
-            )
+    #uvicorn.run(app, host="0.0.0.0", port=8000)
 
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    from indexing_pipelines.indexing_script import *
+    
+
+    obj = Indexing_Pipeline_Head("/home/mann/TEST_FILES/python-mini-projects/projects/Wikipedia_search_wordcloud", "MannM","Repo-Test1")
+
+    obj.dispatch_files()

@@ -13,45 +13,41 @@ import os
 import chromadb
 from sentence_transformers import SentenceTransformer
 
+from config import DOCUMENTATION_CHROMA_DB_PATH
 
-# REMOVE THIS WHEN SCRIPT IS READY!
-from dotenv import load_dotenv
+import hashlib
 
-load_dotenv()   # Loads .env into OS environment variables
+class Document_Indexing:
+    def __init__(self, user_id: str,repo_id: str):
+        
+        self.user_id = user_id  # used for collection name
+        self.repo_id = repo_id  # used for metadata of chunk
 
-EMBEDDING_MODEL = "BAAI/bge-small-en-v1.5"
+        self.model = SentenceTransformer(os.getenv("DOCUMENT_EMBEDDING_MODEL")) # Loading the Embedding model
+        
+        # get or create a collection
+        # collection name is always the user_id
+        collection_name = self.user_id
 
-DB_DIR = "./Documentation_chroma_db"
-COLLECTION_NAME = "Mann"
+        client = chromadb.PersistentClient(path=DOCUMENTATION_CHROMA_DB_PATH)
 
-client = chromadb.PersistentClient(path=DB_DIR)
-collection = client.get_or_create_collection(
-    name=COLLECTION_NAME,
-    metadata={"hnsw:space": "cosine"},
-)
-
-################################################
-
-class Document_Indexing():
-    def __init__(self, repo_id: str):
-        self.repo_id = repo_id
-        pass
+        self.collection = client.get_or_create_collection(name=collection_name, metadata={"hnsw:space": "cosine"})
 
     def Index_File(self, filepath: str):
         """ 
-            Args:
-            Return:
+            Dispatched the file to either `Index_pdf(..)` or Index_text_md(..)
+
+            Args: filpath (str) : file to be indexed
+            Return: -
         """
         
         # Extract extension
         filename = os.path.basename(filepath)
         _, ext = os.path.splitext(filename)
 
-        #
-
-
         # There isn't a need for a default error check for the ext as that is handled earlir in the `indexing_script` before this function is called, we are gauranteed a valid file extension
-        if ext == "pdf":
+        if ext.lower() == ".pdf":
+            # TODO
             pass
         else:
             # The ext is .md or .txt
@@ -60,24 +56,62 @@ class Document_Indexing():
         return
 
     def Index_pdf(self, filepath: str):
+        """
+            Parse the pdf into .md format using docling and then simply call `Index_text_md(..)` on this parsed markdown file.
+        """
+
+        # TODO
+        # Parse the pdf into .md using Docling
+        # Store the .md in a tmp folder and pass that .md file to Index_text_md
+
         return
 
     def Index_text_md(self, filepath: str):
-        
+        """
+            Uses helper function `stream_chunks_from_file()` to generate chunks from file to be indexed and actually store the embedding of the chunk into the Chroma vector DB with appropriate metadata(`repo_id`) in the users collection.
+        """
         # chunks is a generator object
         chunks = self.stream_chunks_from_file(filepath)
 
-        model = SentenceTransformer(EMBEDDING_MODEL)
+        # Store all chunks at once (more efficient)
+        all_ids = []
+        all_documents = []
+        all_embeddings = []
+        all_metadatas = []
 
         # Embed Each chunk into the Chroma Vector DB
-        for chunk in chunks:
-            embedding = model.encode(texts, normalize_embeddings=True).tolist()
+        for i, chunk in enumerate(chunks):
+            # Generate unique ID for each chunk
+            # chunk_id = f"chunk_{i}_{self.repo_id}" <<-- old imp., causes collisions
+
+            # Hash the full filepath, not just the filename
+            file_hash = hashlib.md5(filepath.encode()).hexdigest()[:8]
+            chunk_id = f"{self.repo_id}_{file_hash}_chunk_{i}"
 
 
+            # Encode this chunk only
+            embedding = self.model.encode(chunk, normalize_embeddings=True).tolist()
+
+            # TODO THIS SOURCE filepath MAY NEED TO BE EDITED!!!
+            metadata = {"repo_id": self.repo_id, 
+            "user_id": self.user_id, "source": filepath}
+
+            # Collect for batch insert
+            all_ids.append(chunk_id)
+            all_documents.append(chunk)
+            all_embeddings.append(embedding)
+            all_metadatas.append(metadata)            
 
 
-            print(chunk)
-            print("+++++++++++++++++")
+        # Add all chunks to collection in one operation
+        if all_ids:  # Only if there are chunks
+            self.collection.add(
+                ids=all_ids,
+                documents=all_documents,
+                embeddings=all_embeddings,
+                metadatas=all_metadatas
+            )
+            print(f"✅ Successfully stored {len(all_ids)} chunks")
 
         return
 
