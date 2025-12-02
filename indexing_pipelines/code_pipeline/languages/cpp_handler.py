@@ -14,8 +14,8 @@ import tree_sitter_cpp
 from tree_sitter import Language as TS_Language
 from tree_sitter import Parser
 
-from Indexing_Pipeline.core.graph_model import Node, NodeLabel
-from Indexing_Pipeline.languages.language_handler import LanguageHandler
+from indexing_pipelines.code_pipeline.core.graph_model import Node, NodeLabel
+from indexing_pipelines.code_pipeline.languages.language_handler import LanguageHandler
 
 # C++ keywords for identifier filtering (includes C keywords)
 CPP_KEYWORDS = {

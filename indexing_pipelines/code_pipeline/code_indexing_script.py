@@ -22,6 +22,8 @@ from config import CODE_CHROMA_DB_PATH, KG_GRAPH_STORE_PATH
 class Code_Indexing:
     def __init__(self, dir_path: str, repo_id: str, user_id: str):
         self.dir_path = dir_path
+        self.repo_id = repo_id
+        self.user_id = user_id
 
     def index_entire_repo(self):
         """
@@ -65,8 +67,9 @@ class Code_Indexing:
         # Index into ChromaDB (only class/function/method nodes are embedded)
         vectorstore = index_graph_into_vectors(
             KG,
+            collection_name=self.user_id,
+            repo_id=self.repo_id,
             persist_dir=CODE_CHROMA_DB_PATH,
-            collection_name=self.user_id
         )
 
         # Save the created Knowledge Graph for retreival later

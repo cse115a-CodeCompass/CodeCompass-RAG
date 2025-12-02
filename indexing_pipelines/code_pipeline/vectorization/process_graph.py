@@ -7,9 +7,9 @@ from urllib.parse import unquote, urlparse
 from langchain_chroma import Chroma
 from langchain_core.documents import Document
 
-from indexing_pipeline.languages.language_config import ENABLED_LANGUAGES
-from indexing_pipeline.languages.language_handler import LanguageHandler
-from indexing_pipeline.vectorization.embeddings_config import DEFAULT_EMBEDDINGS
+from indexing_pipelines.code_pipeline.languages.language_config import ENABLED_LANGUAGES
+from indexing_pipelines.code_pipeline.languages.language_handler import LanguageHandler
+from indexing_pipelines.code_pipeline.vectorization.embeddings_config import DEFAULT_EMBEDDINGS
 
 from config import CODE_CHROMA_DB_PATH, KG_GRAPH_STORE_PATH
 
@@ -148,7 +148,7 @@ def nodes_to_documents(nodes: Iterable, G, handlers: Optional[List[LanguageHandl
 
 
 def index_graph_into_vectors(
-    G, persist_dir=CODE_CHROMA_DB_PATH, collection_name="code_graph_chunks"
+    G, collection_name: str, repo_id: str, persist_dir=CODE_CHROMA_DB_PATH 
 ):
     """
     Index graph nodes into a ChromaDB vector database.
@@ -156,7 +156,8 @@ def index_graph_into_vectors(
     Args:
         G: Graph object containing code nodes
         persist_dir: Directory to persist the vector database
-        collection_name: Name of the ChromaDB collection (use version-specific names)
+        collection_name: Name of the ChromaDB collection (name of the user(user-id))
+        repo_id: to distinguish between multiple projects of a single user.
 
     Returns:
         Chroma vectorstore instance
@@ -169,6 +170,11 @@ def index_graph_into_vectors(
     )
     defs = [n for n in G.nodes.values() if n.label in ("class", "function", "method")]
     docs = nodes_to_documents(defs, G)
+
+    # Inject repo_id into metadata
+    for d in docs:
+        d.metadata["repo_id"] = repo_id
+
     ids = [d.metadata["node_id"] for d in docs]
     BATCH = 256
     for i in range(0, len(docs), BATCH):

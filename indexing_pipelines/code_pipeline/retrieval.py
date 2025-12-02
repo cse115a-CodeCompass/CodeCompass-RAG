@@ -118,13 +118,18 @@ def assemble_context_from_seeds_and_neighbors(KG, seed_docs, neighbor_ids, *, ma
     return "".join(parts)
 
 
-def graphrag_context(KG, vectorstore: Chroma, query: str, *, k_seeds=2, hops=2, max_neighbors=50, max_chars=8000, debug=False):
+def graphrag_context(KG, vectorstore: Chroma, query: str, *, k_seeds=2, hops=2, max_neighbors=50, max_chars=8000, repo_id: str, user_id:str,debug=False):
     """
     Vector seeds -> k-hop graph expansion -> assemble context.
     Returns: (context_str, seed_ids, neighbor_ids)
     """
+
     # 1) Vector search for seeds (keep scores if you want to debug)
-    seeds = vectorstore.similarity_search_with_relevance_scores(query, k=k_seeds)
+    seeds = vectorstore.similarity_search_with_relevance_scores(
+        query=query,
+        k=k_seeds,
+        filter={"repo_id": repo_id}
+    )
     seed_docs = [doc for (doc, _score) in seeds]
     seed_ids = [doc.metadata["node_id"] for (doc, _score) in seeds]
 

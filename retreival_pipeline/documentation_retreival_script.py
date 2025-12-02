@@ -1,5 +1,5 @@
 """
-    This file contains all the code for retreiving
+    This file contains all the code for retreiving from the ChromaDB that contains all the documentation embeddings
 """
 
 import os
@@ -38,6 +38,7 @@ class Documentation_Retreival:
         results = collection.query(
             query_embeddings=[query_embedding],
             n_results=3,
+            where={"repo_id": self.repo_id},   # ← FILTER BY METADATA
             include=["documents", "metadatas", "distances"]
         )
         return self.format_results(results)
