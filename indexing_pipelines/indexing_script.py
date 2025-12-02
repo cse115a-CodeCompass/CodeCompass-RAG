@@ -78,8 +78,11 @@ class Indexing_Pipeline_Head:
                     # If the file type is neither code (the languages we handle) or documentation
                     # For now we skip indexing the file, but in future we could add handling for this
                     continue
-            
+        
+        print("✅ All DOCU. FILES INDEXED SUCCESSFULLY!")
+
         self.Call_Code_Indexing_Pipeline()
+        print("✅ All CODE FILES INDEXED SUCCESSFULLY!")
 
         return
 
@@ -88,7 +91,7 @@ class Indexing_Pipeline_Head:
             - This function passes the given directory directly into the Code Indexing Pipeline
         """
 
-        code_indexer = Code_Indexing(self.dir_path)
+        code_indexer = Code_Indexing(self.dir_path, self.repo_id, self.user_id)
         
         code_indexer.index_entire_repo()
 
@@ -109,7 +112,7 @@ class Indexing_Pipeline_Head:
 
 # This main is only for testing purposes
 def main():
-    obj = Indexing_Pipeline_Head("/home/mann/TEST_FILES/python-mini-projects/projects/Wikipedia_search_wordcloud", "MannM","Repo-Test1")
+    obj = Indexing_Pipeline_Head("/home/mann/CodeCompass-RAG", "Mann","Repo-Test3")
 
     obj.dispatch_files()
 

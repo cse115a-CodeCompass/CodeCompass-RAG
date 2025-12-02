@@ -22,8 +22,10 @@ import ollama
 from dotenv import load_dotenv
 import os
 
-import System_Prompts
+from .system_prompts import AGENT_SYS_PROMPT
 
+from .documentation_retreival_script import Documentation_Retreival
+from .code_retreival_script import Code_Retreival
 
 # Load the .env file
 load_dotenv()
@@ -69,18 +71,18 @@ class RAG_Agent:
         """
 
         agent_response = ollama.chat(
-            model=OLLAMA_AGENT_LLM,
+            model=os.getenv("OLLAMA_AGENT_MODEL"),
             messages=[
-                {"role":"system", "content": System_Prompts.AGENT_SYS_PROMPT},
+                {"role":"system", "content": AGENT_SYS_PROMPT},
                 {"role":"user", "content": query}
             ],
         )
 
-        #print(agent_response["message"]["content"])
+        print("AGENT CHOSE TOOL=",agent_response["message"]["content"])
 
         return agent_response["message"]["content"]
 
-    def dispatch_to_tool(self, tool_name, query, chat_history):
+    def dispatch_to_tool(self, tool_name, query):
         """
             Executes the selected tool & returns the retreived context.
 
@@ -92,10 +94,25 @@ class RAG_Agent:
                 Retrieved context (str)
         """
 
-        
+        match tool_name:
+            case "docs_rag":
+                doc_ret_obj = Documentation_Retreival(self.user_id, self.repo_id)
 
-        return
+                context = doc_ret_obj.retreive_from_DB(query)
+                
+            case "code_rag":
+                code_ret_obj = Code_Retreival(self.user_id, self.repo_id)
 
+                context = code_ret_obj.retreive_from_DB(query)
+    
+            case "conversation_history":
+                context = ""
+            case _:
+                # Will never enter here
+                # just book keeping
+                context = ""
+
+        return context
 
     def query_llm(self, query: str, chat_history: str, context: str):
         """
@@ -119,7 +136,7 @@ class RAG_Agent:
         selected_tool = self.select_tool(query)
 
         # Retreive Context from Selected Knowledge Source
-        context = self.dispatch_to_tool(select_tool, query, chat_history)
+        context = self.dispatch_to_tool(select_tool, query)
 
         # Query the LLM through Ollama with provided context
         query_llm(query, chat_history, context)
@@ -130,11 +147,15 @@ class RAG_Agent:
 # This main() is only for testing purposes
 def main():
     print(OLLAMA_AGENT_LLM)
-    print(System_Prompts.AGENT_SYS_PROMPT)
+    print(AGENT_SYS_PROMPT)
 
     obj = RAG_Agent()
 
-    obj.select_tool("what is RAG_AGENT(self)?")
+    query = "what is RAG_AGENT(self)?"
+
+    obj.select_tool(query)
+
+    print("context=", obj.dispatch_to_tool(query))
 
     return
 

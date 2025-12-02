@@ -121,4 +121,4 @@ def get_embeddings(use_local: bool = True):
 
 
 # Default embedder - change use_local to switch models
-DEFAULT_EMBEDDINGS = get_embeddings(use_local=True)
+DEFAULT_EMBEDDINGS = get_embeddings(use_local=False)

@@ -73,9 +73,18 @@ app.include_router(routes_documentation.router)
 if __name__ == "__main__":
     #uvicorn.run(app, host="0.0.0.0", port=8000)
 
-    from indexing_pipelines.indexing_script import *
+    from indexing_pipelines.indexing_script import Indexing_Pipeline_Head
     
 
-    obj = Indexing_Pipeline_Head("/home/mann/TEST_FILES/python-mini-projects/projects/Wikipedia_search_wordcloud", "MannM","Repo-Test1")
+    #obj = Indexing_Pipeline_Head("/home/mann/CodeCompass-RAG", "Mann","Repo-Test2")
+    #obj.dispatch_files()
 
-    obj.dispatch_files()
+    from retreival_pipeline.rag_agent import RAG_Agent
+    
+    query = "explain rag_agent.py"
+
+    agent_obj = RAG_Agent("Mann","Repo-Test2")
+
+    tool = agent_obj.select_tool(query)
+
+    agent_obj.dispatch_to_tool(tool, query)
