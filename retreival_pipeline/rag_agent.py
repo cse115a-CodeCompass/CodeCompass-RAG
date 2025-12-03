@@ -133,7 +133,7 @@ class RAG_Agent:
                 {"role": "user", "content": f"Context:\n{context}\n\nUser question: {query}"},
             ]
             + chat_history,
-            stream=False
+            stream=True
         )
 
         return stream
