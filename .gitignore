@@ -85,6 +85,7 @@ test_typescript_handler.py
 test_find_classes.py
 test_line_numbers.py
 inspect_stored_class.py
+test*
 
 # Scratch/Notes
 SCRATCHPAD.md

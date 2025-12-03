@@ -3,6 +3,7 @@
 """
 
 import os
+import subprocess
 from .ollama_checks import Ollama_Manager
 from .chroma_checks import Chroma_Manager
 
