@@ -10,7 +10,9 @@ from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import JSONResponse, RedirectResponse, StreamingResponse
 from pydantic import BaseModel
 
-# from Retreival_Pipeline.RAG_Agent import _
+from retreival_pipeline.rag_agent import RAG_Agent
+
+
 
 # Define the FastAPI Router Object
 router = APIRouter(prefix="")
@@ -129,42 +131,54 @@ async def fetch_available_Ollama_Models():
         print(f"Error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))    
 
-@router.post("/chat")
-async def handle_rag_request(request: Request):
-    """
-
-
-    Args:
-
-    Retruns:
-
-    Raises:
-
-    """
-
+@router.post("/chat/stream")
+async def handle_rag_request_stream(request: Request):
+    # Parse request body BEFORE creating the streaming response
     try:
         body = await request.json()
-        print("Received body:", body)
-
         rag_request = RagRequest(**body)
-
-        # Pass to the Orchestrator Agent
-
-        user_query = rag_request.userQuery
-        selected_model = "phi3:latest"
         chat_history = rag_request.conversationHistory
+        user_query = rag_request.userQuery
+        selected_model = rag_request.selectedModel
+        user_id = rag_request.user_id
+        repo_id = rag_agent.repo_id
 
-        chat_history.append({"role": "user", "content": f"USER QUESTION: {user_query}"})
-
-        response = ollama.chat(
-            model=selected_model, messages=chat_history, stream=False
-        )
-
-        result = response["message"]["content"]
-        return JSONResponse({"response": result})
-
-    except json.JSONDecodeError:
-        raise HTTPException(status_code=400, detail="Invalid JSON")
+    except json.JSONDecodeError as e:
+        raise HTTPException(status_code=400, detail="Invalid JSON in request body")
+    except KeyError as e:
+        raise HTTPException(status_code=400, detail=f"Missing required field: {str(e)}")
     except Exception as e:
-        print(f"Error: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+    def generate_stream():
+        try:
+            # Initialize the RAG Agent
+            agent_obj = RAG_Agent(user_id, repo_id)
+
+            stream = agent_obj.run(user_query, chat_history, selected_model)
+
+            for chunk in stream:
+                if "message" in chunk and "content" in chunk["message"]:
+                    content = chunk["message"]["content"]
+                    yield f"data: {json.dumps({'content': content})}\n\n"
+
+            yield "data: [DONE]\n\n"
+
+        except ollama.ResponseError as e:
+            error_data = json.dumps({"error": f"Ollama error: {str(e)}"})
+            yield f"data: {error_data}\n\n"
+        except Exception as e:
+            error_data = json.dumps({"error": f"Internal server error: {str(e)}"})
+            yield f"data: {error_data}\n\n"
+
+    try:
+        return StreamingResponse(
+            generate_stream(),
+            media_type="text/event-stream",
+            headers={
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+            },
+        )
+    except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

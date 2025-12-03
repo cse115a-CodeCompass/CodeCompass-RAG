@@ -41,24 +41,33 @@ class Documentation_Retreival:
             where={"repo_id": self.repo_id},   # ← FILTER BY METADATA
             include=["documents", "metadatas", "distances"]
         )
-        return self.format_results(results)
 
-    def format_results(self, results):
-        """Format the query results in a readable way"""
-        formatted_results = []
-        
-        if results['documents']:
-            for i, (doc, metadata, distance) in enumerate(zip(
-                results['documents'][0], 
-                results['metadatas'][0], 
-                results['distances'][0]
-            )):
-                formatted_results.append({
-                    'rank': i + 1,
-                    'document': doc,
-                    'metadata': metadata,
-                    'similarity_score': 1 - distance,  # Convert distance to similarity
-                    'distance': distance
-                })
-        
-        return formatted_results
+        # Parse the results
+        # A list with each element being one of the retreived chunks
+    
+
+        # One string with all the context
+
+
+        # A list with all the filepaths
+
+
+        # Extract first batch from Chroma (because everything is batched)
+        docs = results["documents"][0]
+        metas = results["metadatas"][0]
+
+        # 1. A list with each retrieved chunk (list of strings)
+        chunks_list = docs
+
+        # 2. One string with all the context
+        full_context = "\n\n".join(docs)
+
+        # 3. A list with all the file paths (from metadata["source"])
+        filepaths = [m.get("source") for m in metas]
+
+
+        #print("full_context=", full_context)
+        #print("chunks_list=", chunks_list)
+        #print("filepaths=", filepaths)
+
+        return full_context, chunks_list, filepaths
