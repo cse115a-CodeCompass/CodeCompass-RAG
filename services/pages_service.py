@@ -24,7 +24,6 @@ from indexing_pipelines.code_pipeline.docs.ia.page_spec import PageSpec, WikiIA
 
 logger = logging.getLogger(__name__)
 
-
 async def insert_wiki_pages(
     supabase: Client,
     documentation_id: str,
