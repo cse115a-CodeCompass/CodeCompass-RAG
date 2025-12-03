@@ -147,7 +147,7 @@ async def handle_rag_request_stream(request: Request):
         user_query = rag_request.userQuery
         selected_model = rag_request.selectedModel
         user_id = rag_request.user_id
-        repo_id = rag_agent.repo_id
+        repo_id = rag_request.repo_id
 
     except json.JSONDecodeError as e:
         raise HTTPException(status_code=400, detail="Invalid JSON in request body")
