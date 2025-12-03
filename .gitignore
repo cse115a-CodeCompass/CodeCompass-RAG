@@ -51,6 +51,7 @@ venv.bak/
 # Generated Outputs
 chroma_db/
 document_chroma_db/
+code_chroma_db/
 kg_store/
 responses.md
 responses_archive.md
