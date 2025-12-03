@@ -138,7 +138,7 @@ class RAG_Agent:
 
         return stream
 
-    def run(self, query: str, chat_history: str, selected_llm: str):
+    def run(self, query: str, chat_history: List, selected_llm: str):
         """
             This function is called when the route handler (handle_rag_request) executes after the /chat endpoint is hit
             
