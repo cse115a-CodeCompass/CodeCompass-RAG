@@ -12,7 +12,7 @@ from pydantic import BaseModel
 
 from retreival_pipeline.rag_agent import RAG_Agent
 
-
+from startup.ollama_checks import Ollama_Manager
 
 # Define the FastAPI Router Object
 router = APIRouter(prefix="")
@@ -121,10 +121,20 @@ async def handle_rag_request_toy_stream(request: Request):
 @router.post("/chat/available_models")
 async def fetch_available_Ollama_Models():
     """
-    
+
+        Args:
+        Returns:
     """
     try:
-        return
+        # Add the request handling stuff
+        # does the function take in any requests in the args?
+        # TODO
+
+        ollama_obj = Ollama_Manager()
+
+        available_models = ollama_obj.parse_installed_models()
+
+        return available_models
     except json.JSONDecodeError:
         raise HTTPException(status_code=400, detail="Invalid JSON")
     except Exception as e:

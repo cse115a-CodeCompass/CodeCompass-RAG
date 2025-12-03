@@ -76,14 +76,14 @@ if __name__ == "__main__":
     from indexing_pipelines.indexing_script import Indexing_Pipeline_Head
     
 
-    #obj = Indexing_Pipeline_Head("/home/mann/CodeCompass-RAG", "Mann","Repo-Test2")
-    #obj.dispatch_files()
+    obj = Indexing_Pipeline_Head("/home/mann/CodeCompass-RAG", "Mann","Repo-Test3")
+    obj.dispatch_files()
 
     from retreival_pipeline.rag_agent import RAG_Agent
     
     query = "explain rag_agent.py"
 
-    agent_obj = RAG_Agent("MannM","Repo-Test1")
+    agent_obj = RAG_Agent("Mann","Repo-Test3")
 
     print(agent_obj.run(query, [], 'phi3:latest')["message"]["content"])
 
