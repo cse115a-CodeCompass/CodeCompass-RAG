@@ -8,8 +8,8 @@ nodes are in scope for that page.
 from pathlib import Path
 from typing import Any, Dict, List, Set
 
-from Indexing_Pipeline.core.graph_model import Graph, Node, NodeLabel
-from Indexing_Pipeline.docs.ia.page_spec import PageSpec, WikiIA
+from indexing_pipelines.code_pipeline.core.graph_model import Graph, Node, NodeLabel
+from indexing_pipelines.code_pipeline.docs.ia.page_spec import PageSpec, WikiIA
 
 
 def compute_page_scope(

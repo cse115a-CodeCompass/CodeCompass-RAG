@@ -118,18 +118,14 @@ async def handle_rag_request_toy_stream(request: Request):
 
 ######################################################################
 
-@router.post("/chat/available_models")
+@router.get("/chat/available_models")
 async def fetch_available_Ollama_Models():
     """
 
-        Args:
+        Args: None
         Returns:
     """
     try:
-        # Add the request handling stuff
-        # does the function take in any requests in the args?
-        # TODO
-
         ollama_obj = Ollama_Manager()
 
         available_models = ollama_obj.parse_installed_models()

@@ -19,8 +19,8 @@ from supabase import Client
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../.."))
 
-from Indexing_Pipeline.core.graph_model import Graph, NodeLabel
-from Indexing_Pipeline.docs.ia.page_spec import PageSpec, WikiIA
+from indexing_pipelines.code_pipeline.core.graph_model import Graph, NodeLabel
+from indexing_pipelines.code_pipeline.docs.ia.page_spec import PageSpec, WikiIA
 
 logger = logging.getLogger(__name__)
 

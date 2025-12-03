@@ -16,9 +16,9 @@ from urllib.parse import unquote, urlparse
 
 from openai import OpenAI
 
-from Indexing_Pipeline.core.graph_model import Graph, Node, NodeLabel
-from Indexing_Pipeline.docs.llm.async_executor import async_batch_process_with_tracking
-from Indexing_Pipeline.docs.llm.providers import LLMProvider
+from indexing_pipelines.code_pipeline.core.graph_model import Graph, Node, NodeLabel
+from indexing_pipelines.code_pipeline.docs.llm.async_executor import async_batch_process_with_tracking
+from indexing_pipelines.code_pipeline.docs.llm.providers import LLMProvider
 
 
 def _extract_source_code(node: Node) -> Optional[str]:

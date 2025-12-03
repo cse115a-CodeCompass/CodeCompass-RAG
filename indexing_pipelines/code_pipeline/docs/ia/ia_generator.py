@@ -10,18 +10,18 @@ import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from Indexing_Pipeline.core.graph_model import Graph, NodeLabel
-from Indexing_Pipeline.docs.ia.page_spec import PageKind, PageSpec, WikiIA
-from Indexing_Pipeline.docs.ia.prompts import (
+from indexing_pipelines.code_pipeline.core.graph_model import Graph, NodeLabel
+from indexing_pipelines.code_pipeline.docs.ia.page_spec import PageKind, PageSpec, WikiIA
+from indexing_pipelines.code_pipeline.docs.ia.prompts import (
     SYSTEM_PROMPT,
     build_global_ia_prompt,
     build_module_subpages_prompt,
 )
-from Indexing_Pipeline.docs.ia.scope_computer import (
+from indexing_pipelines.code_pipeline.docs.ia.scope_computer import (
     compute_all_scopes,
     validate_coverage,
 )
-from Indexing_Pipeline.docs.llm.providers import LLMProvider
+from indexing_pipelines.code_pipeline.docs.llm.providers import LLMProvider
 
 
 async def generate_global_ia(

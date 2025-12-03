@@ -4,7 +4,7 @@ LLM prompts for generating wiki page content.
 Different prompts for different page kinds to generate appropriate content style.
 """
 
-from Indexing_Pipeline.docs.ia.context_builder import PageContext
+from indexing_pipelines.code_pipeline.docs.ia.context_builder import PageContext
 
 # System prompt used for all page types
 SYSTEM_PROMPT = """You are an expert technical writer creating clear, accurate documentation for a Python codebase.
