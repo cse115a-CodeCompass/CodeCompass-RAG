@@ -18,7 +18,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 # import the routers
-from api import routes_chat, routes_documentation#, routes_indexing
+from api import routes_chat, routes_documentation, routes_indexing
 
 from startup import run_startup_checks
 from contextlib import asynccontextmanager
@@ -67,34 +67,22 @@ app.add_middleware(
 print(">>> CORS MIDDLEWARE INSTALLED <<<")
 
 app.include_router(routes_chat.router)
-#app.include_router(routes_indexing.router)
+app.include_router(routes_indexing.router)
 app.include_router(routes_documentation.router)
 
 if __name__ == "__main__":
-    #uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8000)
 
-    from indexing_pipelines.indexing_script import Indexing_Pipeline_Head
-    
-
-    obj = Indexing_Pipeline_Head("/home/mann/CodeCompass-RAG", "Mann","Repo-Test3")
-    obj.dispatch_files()
-
-    from retreival_pipeline.rag_agent import RAG_Agent
-    
-    query = "explain rag_agent.py"
-
-    agent_obj = RAG_Agent("Mann","Repo-Test3")
-
-    print(agent_obj.run(query, [], 'phi3:latest')["message"]["content"])
-
-
+    #from indexing_pipelines.indexing_script import Indexing_Pipeline_Head
+    #obj = Indexing_Pipeline_Head("/home/mann/CodeCompass-RAG", "Mann","Repo-Test3")
+    #obj.dispatch_files()
+    #from retreival_pipeline.rag_agent import RAG_Agent
+    #query = "explain rag_agent.py"
+    #agent_obj = RAG_Agent("Mann","Repo-Test3")
+    #print(agent_obj.run(query, [], 'phi3:latest')["message"]["content"])
 
     #tool = agent_obj.select_tool(query)
-#
     #tool = "docs_rag"
-#
     #context = agent_obj.dispatch_to_tool(tool, query)
-#
     #print(agent_obj.query_llm(query, [], context, 'phi3:latest')["message"]["content"])
-
     #print(context)

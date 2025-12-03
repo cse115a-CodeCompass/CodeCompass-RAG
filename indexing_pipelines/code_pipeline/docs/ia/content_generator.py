@@ -8,11 +8,11 @@ import asyncio
 from pathlib import Path
 from typing import TYPE_CHECKING, Dict, List, Optional
 
-from Indexing_Pipeline.core.graph_model import Graph
-from Indexing_Pipeline.docs.ia.content_prompts import get_prompt_for_page
-from Indexing_Pipeline.docs.ia.context_builder import build_page_context
-from Indexing_Pipeline.docs.ia.page_spec import PageSpec, WikiIA
-from Indexing_Pipeline.docs.llm.providers import LLMProvider
+from indexing_pipelines.code_pipeline.core.graph_model import Graph
+from indexing_pipelines.code_pipeline.docs.ia.content_prompts import get_prompt_for_page
+from indexing_pipelines.code_pipeline.docs.ia.context_builder import build_page_context
+from indexing_pipelines.code_pipeline.docs.ia.page_spec import PageSpec, WikiIA
+from indexing_pipelines.code_pipeline.docs.llm.providers import LLMProvider
 
 if TYPE_CHECKING:
     from docs.ia.page_spec import WikiIA
