@@ -83,8 +83,18 @@ if __name__ == "__main__":
     
     query = "explain rag_agent.py"
 
-    agent_obj = RAG_Agent("Mann","Repo-Test2")
+    agent_obj = RAG_Agent("MannM","Repo-Test1")
 
-    tool = agent_obj.select_tool(query)
+    print(agent_obj.run(query, [], 'phi3:latest')["message"]["content"])
 
-    agent_obj.dispatch_to_tool(tool, query)
+
+
+    #tool = agent_obj.select_tool(query)
+#
+    #tool = "docs_rag"
+#
+    #context = agent_obj.dispatch_to_tool(tool, query)
+#
+    #print(agent_obj.query_llm(query, [], context, 'phi3:latest')["message"]["content"])
+
+    #print(context)

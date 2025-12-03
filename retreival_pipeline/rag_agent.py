@@ -27,6 +27,8 @@ from .system_prompts import AGENT_SYS_PROMPT
 from .documentation_retreival_script import Documentation_Retreival
 from .code_retreival_script import Code_Retreival
 
+from typing import List
+
 # Load the .env file
 load_dotenv()
 
@@ -78,7 +80,7 @@ class RAG_Agent:
             ],
         )
 
-        print("AGENT CHOSE TOOL=",agent_response["message"]["content"])
+        #print("AGENT CHOSE TOOL=",agent_response["message"]["content"])
 
         return agent_response["message"]["content"]
 
@@ -98,7 +100,7 @@ class RAG_Agent:
             case "docs_rag":
                 doc_ret_obj = Documentation_Retreival(self.user_id, self.repo_id)
 
-                context = doc_ret_obj.retreive_from_DB(query)
+                context, chunks_list, chunks_file_paths = doc_ret_obj.retreive_from_DB(query)
                 
             case "code_rag":
                 code_ret_obj = Code_Retreival(self.user_id, self.repo_id)
@@ -114,13 +116,29 @@ class RAG_Agent:
 
         return context
 
-    def query_llm(self, query: str, chat_history: str, context: str):
+    def query_llm(self, query: str, chat_history: List, context: str, selected_llm: str):
         """
+            Query Ollama LLM with the retrieved context
+            
+            Args:
+
+            Returns:
+                Returns the streaming generator object
         """
 
-        return
+        stream = ollama.chat(
+            model=selected_llm,
+            messages=[
+                {"role": "system", "content": "Use the provided context to answer the user."},
+                {"role": "user", "content": f"Context:\n{context}\n\nUser question: {query}"},
+            ]
+            + chat_history,
+            stream=False
+        )
 
-    def run(self, query: str, chat_history: str):
+        return stream
+
+    def run(self, query: str, chat_history: str, selected_llm: str):
         """
             This function is called when the route handler (handle_rag_request) executes after the /chat endpoint is hit
             
@@ -136,13 +154,12 @@ class RAG_Agent:
         selected_tool = self.select_tool(query)
 
         # Retreive Context from Selected Knowledge Source
-        context = self.dispatch_to_tool(select_tool, query)
+        context = self.dispatch_to_tool(selected_tool, query)
 
         # Query the LLM through Ollama with provided context
-        query_llm(query, chat_history, context)
+        stream = self.query_llm(query, chat_history, context, selected_llm)
 
-        return
-
+        return stream
 
 # This main() is only for testing purposes
 def main():

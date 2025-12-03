@@ -14,6 +14,7 @@ from config import CODE_CHROMA_DB_PATH, KG_GRAPH_STORE_PATH
 
 from langchain_chroma import Chroma
 
+from indexing_pipelines.code_pipeline.core.graph_model import Graph
 
 class Code_Retreival:
     def __init__(self, user_id: str, repo_id: str):
@@ -32,8 +33,7 @@ class Code_Retreival:
 
         # load users KG for this repo
 
-        with open(f"{KG_GRAPH_STORE_PATH}/graph_{self.user_id}_{self.repo_id}.json", "r") as f:
-            KG = json.load(f)
+        KG = Graph.load(f"{KG_GRAPH_STORE_PATH}/graph_{self.user_id}_{self.repo_id}.json")
 
         # make the chroma client with correct collection name
 
