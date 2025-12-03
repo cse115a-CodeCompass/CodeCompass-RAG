@@ -35,6 +35,9 @@ from services.github_app import github_app
 from services.create_client import supabase
 from services.pages_service import insert_wiki_pages
 
+
+from indexing_pipelines.indexing_script import Indexing_Pipeline_Head
+
 # Load environment variables
 load_dotenv()
 
@@ -150,6 +153,13 @@ async def index_repo(request: Request):
                 raise HTTPException(
                     status_code=500, detail=f"Git clone failed: {error_message}"
                 )
+
+        # ====================================================================
+        # STEP 1.5: Actual Indexing of Codebase
+        # ====================================================================
+        
+        Indexer_obj = Indexing_Pipeline_Head(temp_dir, user_id, repo_id)
+        Indexer_obj.dispatch_files()
 
         # ====================================================================
         # STEP 2-5: Run Documentation Pipeline
