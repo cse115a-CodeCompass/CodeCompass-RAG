@@ -109,10 +109,12 @@ class RAG_Agent:
 
             case "conversation_history":
                 context = ""
+                chunks_list, chunks_file_paths = [], []
             case _:
                 # Will never enter here
                 # just book keeping
                 context = ""
+                chunks_list, chunks_file_paths = [], []
 
         print("RETREIVED CONTEXT: ", context)
 

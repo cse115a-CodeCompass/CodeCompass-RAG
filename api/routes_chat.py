@@ -130,9 +130,11 @@ async def fetch_available_Ollama_Models():
     try:
         ollama_obj = Ollama_Manager()
 
-        available_models = ollama_obj.parse_installed_models()
+        # TODO
+        #available_models = ollama_obj.parse_installed_models()
 
-        return available_models
+        #return available_models
+        return []
     except json.JSONDecodeError:
         raise HTTPException(status_code=400, detail="Invalid JSON")
     except Exception as e:
