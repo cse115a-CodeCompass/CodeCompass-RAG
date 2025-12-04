@@ -28,7 +28,9 @@ class Code_Retreival:
             Args:
                 query (str): User Query
             Return:
-                context (str)
+                context (str):
+                chunks_list (List[str]): 
+                filepaths_list (List[str]):
         """
 
         # load users KG for this repo
@@ -44,7 +46,6 @@ class Code_Retreival:
             collection_metadata={"hnsw:space": "cosine"},
         )
 
-        context, seeds, neighbors = graphrag_context(KG, vs, query, repo_id=self.repo_id, user_id=self.user_id)
+        context, chunks_list, filepaths_list, linenums_list = graphrag_context(KG, vs, query, repo_id=self.repo_id, user_id=self.user_id)
 
-        return context
-
+        return context, chunks_list, filepaths_list

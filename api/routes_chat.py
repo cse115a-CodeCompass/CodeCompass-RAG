@@ -11,7 +11,6 @@ from fastapi.responses import JSONResponse, RedirectResponse, StreamingResponse
 from pydantic import BaseModel
 
 from retreival_pipeline.rag_agent import RAG_Agent
-
 from startup.ollama_checks import Ollama_Manager
 
 # Define the FastAPI Router Object
@@ -25,6 +24,7 @@ class RagRequest(BaseModel):
     selectedModel: str
     user_id: str
     repo_id: str
+
 
 # !!! DUMMY ENDPOINT !!!
 ######################################################################
@@ -118,12 +118,14 @@ async def handle_rag_request_toy_stream(request: Request):
 
 ######################################################################
 
+
 @router.get("/chat/available_models")
 async def fetch_available_Ollama_Models():
     """
-
-        Args: None
-        Returns:
+        Returns a list of available LLMs through ollama to the frontend
+    Args: None
+    Returns:
+        available_model (List[str]): A list of all the ollama models available
     """
     try:
         ollama_obj = Ollama_Manager()
@@ -135,10 +137,15 @@ async def fetch_available_Ollama_Models():
         raise HTTPException(status_code=400, detail="Invalid JSON")
     except Exception as e:
         print(f"Error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))    
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @router.post("/chat/stream")
 async def handle_rag_request_stream(request: Request):
+    """
+        Handles RAG-based chat requests with streaming responses.
+        Retrieves relevant context from vector DB and graph DB before responding.
+    """
     # Parse request body BEFORE creating the streaming response
     try:
         body = await request.json()
@@ -149,33 +156,112 @@ async def handle_rag_request_stream(request: Request):
         user_id = rag_request.user_id
         repo_id = rag_request.repo_id
 
+        # Validate required fields
+        if not user_query or not isinstance(user_query, str):
+            raise HTTPException(
+                status_code=400, detail="userQuery must be a non-empty string"
+            )
+        if not user_id or not isinstance(user_id, str):
+            raise HTTPException(
+                status_code=400, detail="user_id must be a non-empty string"
+            )
+        if not repo_id or not isinstance(repo_id, str):
+            raise HTTPException(
+                status_code=400, detail="repo_id must be a non-empty string"
+            )
+        if not selected_model or not isinstance(selected_model, str):
+            raise HTTPException(
+                status_code=400, detail="selectedModel must be a non-empty string"
+            )
+        if not isinstance(chat_history, list):
+            raise HTTPException(
+                status_code=400, detail="conversationHistory must be a list"
+            )
+
+        print(
+            f"[/chat/stream] user_id={user_id}, repo_id={repo_id}, model={selected_model}, query={user_query[:50]}..."
+        )
+
     except json.JSONDecodeError as e:
         raise HTTPException(status_code=400, detail="Invalid JSON in request body")
+    except HTTPException:
+        raise
     except KeyError as e:
         raise HTTPException(status_code=400, detail=f"Missing required field: {str(e)}")
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        print(f"[/chat/stream] Request parsing error: {str(e)}")
+        raise HTTPException(
+            status_code=400, detail=f"Request validation error: {str(e)}"
+        )
 
     def generate_stream():
+        agent_obj = None
         try:
             # Initialize the RAG Agent
+            print(
+                f"[/chat/stream] Initializing RAG Agent for user={user_id}, repo={repo_id}"
+            )
             agent_obj = RAG_Agent(user_id, repo_id)
 
-            stream = agent_obj.run(user_query, chat_history, selected_model)
+            # Run RAG pipeline and get streaming response
+            print(f"[/chat/stream] Running RAG pipeline with model={selected_model}")
+            stream, chunks_list, chunks_file_paths = agent_obj.run(user_query, chat_history, selected_model)
 
+
+
+            # Combine the lists into a list of snippet-like objects/tuples
+            snippets_data = zip(chunks_file_paths, chunks_list)
+            
+            for file_path, chunk_content in snippets_data:
+                yield format_sse({
+                    "type": "snippet",
+                    "file": file_path,
+                    "code": chunk_content
+                })            
+
+            # Stream tokens back to client
             for chunk in stream:
                 if "message" in chunk and "content" in chunk["message"]:
                     content = chunk["message"]["content"]
+                    print(content)
                     yield f"data: {json.dumps({'content': content})}\n\n"
 
             yield "data: [DONE]\n\n"
+            print(f"[/chat/stream] Stream completed successfully")
 
+        except FileNotFoundError as e:
+            error_msg = f"Repository data not found for user={user_id}, repo={repo_id}. Please index the repository first."
+            print(f"[/chat/stream] Error: {error_msg}")
+            yield f"data: {json.dumps({'error': error_msg})}\n\n"
         except ollama.ResponseError as e:
-            error_data = json.dumps({"error": f"Ollama error: {str(e)}"})
-            yield f"data: {error_data}\n\n"
+            error_msg = f"Ollama error: {str(e)}. Please check if the model '{selected_model}' is installed."
+            print(f"[/chat/stream] Ollama error: {str(e)}")
+            yield f"data: {json.dumps({'error': error_msg})}\n\n"
+        except ConnectionError as e:
+            error_msg = (
+                "Failed to connect to Ollama server. Please ensure Ollama is running."
+            )
+            print(f"[/chat/stream] Connection error: {str(e)}")
+            yield f"data: {json.dumps({'error': error_msg})}\n\n"
+        except ValueError as e:
+            error_msg = f"Invalid value: {str(e)}"
+            print(f"[/chat/stream] ValueError: {str(e)}")
+            yield f"data: {json.dumps({'error': error_msg})}\n\n"
         except Exception as e:
-            error_data = json.dumps({"error": f"Internal server error: {str(e)}"})
-            yield f"data: {error_data}\n\n"
+            error_msg = f"Internal server error: {str(e)}"
+            print(f"[/chat/stream] Unexpected error: {str(e)}")
+            import traceback
+
+            traceback.print_exc()
+            yield f"data: {json.dumps({'error': error_msg})}\n\n"
+        finally:
+            # Cleanup resources if RAG agent has cleanup method
+            if agent_obj and hasattr(agent_obj, "cleanup"):
+                try:
+                    agent_obj.cleanup()
+                    print(f"[/chat/stream] RAG Agent cleaned up successfully")
+                except Exception as cleanup_error:
+                    print(f"[/chat/stream] Error during cleanup: {str(cleanup_error)}")
 
     try:
         return StreamingResponse(
@@ -184,7 +270,11 @@ async def handle_rag_request_stream(request: Request):
             headers={
                 "Cache-Control": "no-cache",
                 "Connection": "keep-alive",
+                "X-Accel-Buffering": "no",  # Disable nginx buffering
             },
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"[/chat/stream] Failed to create streaming response: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to initialize stream: {str(e)}"
+        )

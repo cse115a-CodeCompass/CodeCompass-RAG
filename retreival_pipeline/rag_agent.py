@@ -105,8 +105,8 @@ class RAG_Agent:
             case "code_rag":
                 code_ret_obj = Code_Retreival(self.user_id, self.repo_id)
 
-                context = code_ret_obj.retreive_from_DB(query)
-    
+                context, chunks_list, chunks_file_paths = code_ret_obj.retreive_from_DB(query)
+
             case "conversation_history":
                 context = ""
             case _:
@@ -114,17 +114,25 @@ class RAG_Agent:
                 # just book keeping
                 context = ""
 
-        return context
+        print("RETREIVED CONTEXT: ", context)
+
+        return context, chunks_list, chunks_file_paths
 
     def query_llm(self, query: str, chat_history: List, context: str, selected_llm: str):
         """
             Query Ollama LLM with the retrieved context
             
             Args:
-
+                query (str): User Query
+                chat_history (List): Past Conversation in ChatML(Chat Markup Language) format
+                context (str): Retreived context
+                selected_llm (str): The selected LLM
             Returns:
-                Returns the streaming generator object
+                stream (generator): Ollama streaming generator object
         """
+
+        # TODO
+        # Check if the first element in `chat_history` is the system prompt if not add it!!
 
         stream = ollama.chat(
             model=selected_llm,
@@ -133,7 +141,7 @@ class RAG_Agent:
                 {"role": "user", "content": f"Context:\n{context}\n\nUser question: {query}"},
             ]
             + chat_history,
-            stream=True
+            stream=False    # ENSURE TRUE!!
         )
 
         return stream
@@ -147,19 +155,21 @@ class RAG_Agent:
                 chat_history (list): Entire Conversation History
 
             Returns:
-                The Ollama Generator Object (which is used for streaming the LLM response)
+                stream (generator): The Ollama Generator Object (which is used for streaming the LLM response)
+                chunks_list (List[str]): List of the retreived code chunks
+                chunks_file_paths (List[str]):List of the files from the which the code chunks belong
         """
 
         # Ask Agent which Knowledge Source to retreive Context from
         selected_tool = self.select_tool(query)
 
         # Retreive Context from Selected Knowledge Source
-        context = self.dispatch_to_tool(selected_tool, query)
+        context, chunks_list, chunks_file_paths = self.dispatch_to_tool(selected_tool, query)
 
         # Query the LLM through Ollama with provided context
         stream = self.query_llm(query, chat_history, context, selected_llm)
 
-        return stream
+        return stream, chunks_list, chunks_file_paths
 
 # This main() is only for testing purposes
 def main():

@@ -120,8 +120,11 @@ def assemble_context_from_seeds_and_neighbors(KG, seed_docs, neighbor_ids, *, ma
 
 def graphrag_context(KG, vectorstore: Chroma, query: str, *, k_seeds=2, hops=2, max_neighbors=50, max_chars=8000, repo_id: str, user_id:str,debug=False):
     """
-    Vector seeds -> k-hop graph expansion -> assemble context.
-    Returns: (context_str, seed_ids, neighbor_ids)
+        Vector seeds -> k-hop graph expansion -> assemble context.
+        Returns: 
+            context (str): All code chunks put into a single context string  
+            filepaths_list (List[str]): All the filepaths of the files from which the chunks are taken
+            linenums_list (List[str]): Exact Line numbers of each chunk
     """
 
     # 1) Vector search for seeds (keep scores if you want to debug)
@@ -132,6 +135,13 @@ def graphrag_context(KG, vectorstore: Chroma, query: str, *, k_seeds=2, hops=2, 
     )
     seed_docs = [doc for (doc, _score) in seeds]
     seed_ids = [doc.metadata["node_id"] for (doc, _score) in seeds]
+
+    chunks_list = [doc.page_content for doc in seed_docs]
+
+    filepaths_list = [doc.metadata["path"] for doc in seed_docs]
+
+    linenums_list = [(doc.metadata["start_line"], doc.metadata["end_line"]) for doc in seed_docs]
+
 
     if debug:
         print(f"\n  [GRAPHRAG DEBUG] Query: {query}")
@@ -185,7 +195,7 @@ def graphrag_context(KG, vectorstore: Chroma, query: str, *, k_seeds=2, hops=2, 
     context = assemble_context_from_seeds_and_neighbors(
         KG, seed_docs, neighbor_ids, max_chars=max_chars
     )
-    return context, seed_ids, neighbor_ids
+    return context, chunks_list, filepaths_list, linenums_list
 
 
 def main():
