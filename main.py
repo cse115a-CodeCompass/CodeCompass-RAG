@@ -74,15 +74,19 @@ if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
 
     #from indexing_pipelines.indexing_script import Indexing_Pipeline_Head
-    #obj = Indexing_Pipeline_Head("/home/mann/CodeCompass-RAG", "Mann","Repo-Test3")
+    #obj = Indexing_Pipeline_Head("/home/mann/CodeCompass-RAG", "Mann","Repo-Test5")
     #obj.dispatch_files()
+    
+    
     #from retreival_pipeline.rag_agent import RAG_Agent
-    #query = "explain rag_agent.py"
-    #agent_obj = RAG_Agent("Mann","Repo-Test3")
-    #print(agent_obj.run(query, [], 'phi3:latest')["message"]["content"])
-
+    #query = "explain how indexing works"
+    #
+    #agent_obj = RAG_Agent("Mann","Repo-Test5")
+    #print(agent_obj.run(query, [], 'DeepSeek-r1:14b')["message"]["content"])
+    
     #tool = agent_obj.select_tool(query)
-    #tool = "docs_rag"
+    #tool = "code_rag"
     #context = agent_obj.dispatch_to_tool(tool, query)
+
     #print(agent_obj.query_llm(query, [], context, 'phi3:latest')["message"]["content"])
     #print(context)

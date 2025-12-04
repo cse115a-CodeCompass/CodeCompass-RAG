@@ -25,7 +25,8 @@ class Documentation_Retreival:
 
             Returns:
                 context (str): Retreived Context
-                metadata
+                chunks_list (List[str]): 
+                filepaths_list (List[str]):
         """
         
         # Get the collection
@@ -63,11 +64,11 @@ class Documentation_Retreival:
         full_context = "\n\n".join(docs)
 
         # 3. A list with all the file paths (from metadata["source"])
-        filepaths = [m.get("source") for m in metas]
+        filepaths_list = [m.get("source") for m in metas]
 
 
         #print("full_context=", full_context)
         #print("chunks_list=", chunks_list)
         #print("filepaths=", filepaths)
 
-        return full_context, chunks_list, filepaths
+        return full_context, chunks_list, filepaths_list
