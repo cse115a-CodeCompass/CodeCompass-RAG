@@ -1,0 +1,455 @@
+{
+  "node": {
+    "7086746f18569372ffa3cfdffc9aa12e4d2f9a0dec": {
+      "workers": {
+        "app/dashboard/repo/[id]/page": {
+          "moduleId": "[project]/.next-internal/server/app/dashboard/repo/[id]/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/lib/services/repoService.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/lib/services/gitProviderService.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "getConversations",
+          "filename": "src/lib/services/repoService.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/repo/[id]/page": "rsc"
+      },
+      "exportedName": "getConversations",
+      "filename": "src/lib/services/repoService.ts"
+    },
+    "400db6ea304681407a6ffd627cbcd0a8a8d67d75ee": {
+      "workers": {
+        "app/dashboard/repo/[id]/page": {
+          "moduleId": "[project]/.next-internal/server/app/dashboard/repo/[id]/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/lib/services/repoService.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/lib/services/gitProviderService.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "indexRepository",
+          "filename": "src/lib/services/repoService.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/repo/[id]/page": "action-browser"
+      },
+      "exportedName": "indexRepository",
+      "filename": "src/lib/services/repoService.ts"
+    },
+    "401aaf8803662d813cec876ec90d3dbc7c01409ec9": {
+      "workers": {
+        "app/dashboard/repo/[id]/page": {
+          "moduleId": "[project]/.next-internal/server/app/dashboard/repo/[id]/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/lib/services/repoService.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/lib/services/gitProviderService.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "getRepoWithStatus",
+          "filename": "src/lib/services/repoService.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/repo/[id]/page": "action-browser"
+      },
+      "exportedName": "getRepoWithStatus",
+      "filename": "src/lib/services/repoService.ts"
+    },
+    "402a12e2aa2d46f9eabc580e53a6e0453753249370": {
+      "workers": {
+        "app/dashboard/repo/[id]/page": {
+          "moduleId": "[project]/.next-internal/server/app/dashboard/repo/[id]/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/lib/services/repoService.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/lib/services/gitProviderService.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "getDocumentationVersions",
+          "filename": "src/lib/services/repoService.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/repo/[id]/page": "action-browser"
+      },
+      "exportedName": "getDocumentationVersions",
+      "filename": "src/lib/services/repoService.ts"
+    },
+    "40352f531d61849c10df43580aa6262b1af019a742": {
+      "workers": {
+        "app/dashboard/repo/[id]/page": {
+          "moduleId": "[project]/.next-internal/server/app/dashboard/repo/[id]/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/lib/services/repoService.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/lib/services/gitProviderService.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "getConversationMessages",
+          "filename": "src/lib/services/repoService.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/repo/[id]/page": "action-browser"
+      },
+      "exportedName": "getConversationMessages",
+      "filename": "src/lib/services/repoService.ts"
+    },
+    "403d930b5e9a84745342c04bbda54c8c3998417372": {
+      "workers": {
+        "app/dashboard/repo/[id]/page": {
+          "moduleId": "[project]/.next-internal/server/app/dashboard/repo/[id]/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/lib/services/repoService.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/lib/services/gitProviderService.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "getLatestDocumentation",
+          "filename": "src/lib/services/repoService.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/repo/[id]/page": "rsc"
+      },
+      "exportedName": "getLatestDocumentation",
+      "filename": "src/lib/services/repoService.ts"
+    },
+    "4044cf5706298fdee41c81a599039b132a933acc86": {
+      "workers": {
+        "app/dashboard/repo/[id]/page": {
+          "moduleId": "[project]/.next-internal/server/app/dashboard/repo/[id]/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/lib/services/repoService.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/lib/services/gitProviderService.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "triggerReindex",
+          "filename": "src/lib/services/repoService.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/repo/[id]/page": "rsc"
+      },
+      "exportedName": "triggerReindex",
+      "filename": "src/lib/services/repoService.ts"
+    },
+    "405a4bbf14e4200acbd83cc24bedcf2fe219964b16": {
+      "workers": {
+        "app/dashboard/repo/[id]/page": {
+          "moduleId": "[project]/.next-internal/server/app/dashboard/repo/[id]/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/lib/services/repoService.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/lib/services/gitProviderService.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "getDocumentation",
+          "filename": "src/lib/services/repoService.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/repo/[id]/page": "rsc"
+      },
+      "exportedName": "getDocumentation",
+      "filename": "src/lib/services/repoService.ts"
+    },
+    "4065b0503ce9290675e57601ee35a62c4806172f7f": {
+      "workers": {
+        "app/dashboard/repo/[id]/page": {
+          "moduleId": "[project]/.next-internal/server/app/dashboard/repo/[id]/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/lib/services/repoService.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/lib/services/gitProviderService.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "deleteCodeSnippet",
+          "filename": "src/lib/services/repoService.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/repo/[id]/page": "rsc"
+      },
+      "exportedName": "deleteCodeSnippet",
+      "filename": "src/lib/services/repoService.ts"
+    },
+    "40958df3514914f5feabd513008732bf17890f3905": {
+      "workers": {
+        "app/dashboard/repo/[id]/page": {
+          "moduleId": "[project]/.next-internal/server/app/dashboard/repo/[id]/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/lib/services/repoService.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/lib/services/gitProviderService.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "getDocPages",
+          "filename": "src/lib/services/repoService.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/repo/[id]/page": "rsc"
+      },
+      "exportedName": "getDocPages",
+      "filename": "src/lib/services/repoService.ts"
+    },
+    "40a7ea579223d56b5a5ab3416ea9bc8be2144dd932": {
+      "workers": {
+        "app/dashboard/repo/[id]/page": {
+          "moduleId": "[project]/.next-internal/server/app/dashboard/repo/[id]/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/lib/services/repoService.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/lib/services/gitProviderService.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "getDocPagesHierarchical",
+          "filename": "src/lib/services/repoService.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/repo/[id]/page": "rsc"
+      },
+      "exportedName": "getDocPagesHierarchical",
+      "filename": "src/lib/services/repoService.ts"
+    },
+    "40ab2349c1cd14b0c07d21948eb7a0ecab8c32640e": {
+      "workers": {
+        "app/dashboard/repo/[id]/page": {
+          "moduleId": "[project]/.next-internal/server/app/dashboard/repo/[id]/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/lib/services/repoService.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/lib/services/gitProviderService.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "deleteConversation",
+          "filename": "src/lib/services/repoService.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/repo/[id]/page": "rsc"
+      },
+      "exportedName": "deleteConversation",
+      "filename": "src/lib/services/repoService.ts"
+    },
+    "40cb284ecf7c75319a51cd3a4731a14624db3e7da3": {
+      "workers": {
+        "app/dashboard/repo/[id]/page": {
+          "moduleId": "[project]/.next-internal/server/app/dashboard/repo/[id]/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/lib/services/repoService.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/lib/services/gitProviderService.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "getDocPageById",
+          "filename": "src/lib/services/repoService.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/repo/[id]/page": "rsc"
+      },
+      "exportedName": "getDocPageById",
+      "filename": "src/lib/services/repoService.ts"
+    },
+    "40cc2b5ffdb2eb3caf9ee90ff3a94c10d7c942cdb1": {
+      "workers": {
+        "app/dashboard/repo/[id]/page": {
+          "moduleId": "[project]/.next-internal/server/app/dashboard/repo/[id]/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/lib/services/repoService.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/lib/services/gitProviderService.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "getReposByOrganizationId",
+          "filename": "src/lib/services/repoService.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/repo/[id]/page": "rsc"
+      },
+      "exportedName": "getReposByOrganizationId",
+      "filename": "src/lib/services/repoService.ts"
+    },
+    "40d1550fbe4b953e3872a6997b223be8c5a31b3c8e": {
+      "workers": {
+        "app/dashboard/repo/[id]/page": {
+          "moduleId": "[project]/.next-internal/server/app/dashboard/repo/[id]/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/lib/services/repoService.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/lib/services/gitProviderService.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "getConversationById",
+          "filename": "src/lib/services/repoService.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/repo/[id]/page": "rsc"
+      },
+      "exportedName": "getConversationById",
+      "filename": "src/lib/services/repoService.ts"
+    },
+    "40d5d7f1541771974a85822138d8392e71a113b731": {
+      "workers": {
+        "app/dashboard/repo/[id]/page": {
+          "moduleId": "[project]/.next-internal/server/app/dashboard/repo/[id]/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/lib/services/repoService.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/lib/services/gitProviderService.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "deleteRepo",
+          "filename": "src/lib/services/repoService.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/repo/[id]/page": "rsc"
+      },
+      "exportedName": "deleteRepo",
+      "filename": "src/lib/services/repoService.ts"
+    },
+    "40ed009f0d51ce94fba83d54c82de57036f3853add": {
+      "workers": {
+        "app/dashboard/repo/[id]/page": {
+          "moduleId": "[project]/.next-internal/server/app/dashboard/repo/[id]/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/lib/services/repoService.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/lib/services/gitProviderService.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "getCodeSnippetsForConversation",
+          "filename": "src/lib/services/repoService.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/repo/[id]/page": "action-browser"
+      },
+      "exportedName": "getCodeSnippetsForConversation",
+      "filename": "src/lib/services/repoService.ts"
+    },
+    "601fa169b11b6973375eb8e0dcc1c5621f47916013": {
+      "workers": {
+        "app/dashboard/repo/[id]/page": {
+          "moduleId": "[project]/.next-internal/server/app/dashboard/repo/[id]/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/lib/services/repoService.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/lib/services/gitProviderService.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "getDocPagesForVersion",
+          "filename": "src/lib/services/repoService.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/repo/[id]/page": "action-browser"
+      },
+      "exportedName": "getDocPagesForVersion",
+      "filename": "src/lib/services/repoService.ts"
+    },
+    "60643372855cfab10bfd1823b863d83223059f2570": {
+      "workers": {
+        "app/dashboard/repo/[id]/page": {
+          "moduleId": "[project]/.next-internal/server/app/dashboard/repo/[id]/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/lib/services/repoService.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/lib/services/gitProviderService.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "renameConversation",
+          "filename": "src/lib/services/repoService.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/repo/[id]/page": "rsc"
+      },
+      "exportedName": "renameConversation",
+      "filename": "src/lib/services/repoService.ts"
+    },
+    "6072a3738e84272d52473f8c41b95025253f0233e1": {
+      "workers": {
+        "app/dashboard/repo/[id]/page": {
+          "moduleId": "[project]/.next-internal/server/app/dashboard/repo/[id]/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/lib/services/repoService.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/lib/services/gitProviderService.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "createRepoViaGithub",
+          "filename": "src/lib/services/repoService.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/repo/[id]/page": "rsc"
+      },
+      "exportedName": "createRepoViaGithub",
+      "filename": "src/lib/services/repoService.ts"
+    },
+    "60d47ca7668eae22c2d601af18f33d54c4ab50b6f6": {
+      "workers": {
+        "app/dashboard/repo/[id]/page": {
+          "moduleId": "[project]/.next-internal/server/app/dashboard/repo/[id]/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/lib/services/repoService.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/lib/services/gitProviderService.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "createRepoViaLocalFile",
+          "filename": "src/lib/services/repoService.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/repo/[id]/page": "rsc"
+      },
+      "exportedName": "createRepoViaLocalFile",
+      "filename": "src/lib/services/repoService.ts"
+    },
+    "60d724809b3734604c7e62a95feab43ddc4ede7a6d": {
+      "workers": {
+        "app/dashboard/repo/[id]/page": {
+          "moduleId": "[project]/.next-internal/server/app/dashboard/repo/[id]/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/lib/services/repoService.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/lib/services/gitProviderService.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "updateRepoSettings",
+          "filename": "src/lib/services/repoService.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/repo/[id]/page": "rsc"
+      },
+      "exportedName": "updateRepoSettings",
+      "filename": "src/lib/services/repoService.ts"
+    },
+    "60da381c553470c3cbe4d265dd4a59642b8cfbb360": {
+      "workers": {
+        "app/dashboard/repo/[id]/page": {
+          "moduleId": "[project]/.next-internal/server/app/dashboard/repo/[id]/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/lib/services/repoService.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/lib/services/gitProviderService.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "createRepoViaGitlab",
+          "filename": "src/lib/services/repoService.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/repo/[id]/page": "rsc"
+      },
+      "exportedName": "createRepoViaGitlab",
+      "filename": "src/lib/services/repoService.ts"
+    },
+    "7035655e9eff45fe03e6f78297bf8a12121969e07a": {
+      "workers": {
+        "app/dashboard/repo/[id]/page": {
+          "moduleId": "[project]/.next-internal/server/app/dashboard/repo/[id]/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/lib/services/repoService.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/lib/services/gitProviderService.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "saveCodeSnippets",
+          "filename": "src/lib/services/repoService.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/repo/[id]/page": "action-browser"
+      },
+      "exportedName": "saveCodeSnippets",
+      "filename": "src/lib/services/repoService.ts"
+    },
+    "705308f3cacbf0c56038f0d34b9ad3b7e1087a50f1": {
+      "workers": {
+        "app/dashboard/repo/[id]/page": {
+          "moduleId": "[project]/.next-internal/server/app/dashboard/repo/[id]/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/lib/services/repoService.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/lib/services/gitProviderService.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "createMessage",
+          "filename": "src/lib/services/repoService.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/repo/[id]/page": "action-browser"
+      },
+      "exportedName": "createMessage",
+      "filename": "src/lib/services/repoService.ts"
+    },
+    "70eec9e0c5d7ed97577df4f40b75aa69e197b3acc7": {
+      "workers": {
+        "app/dashboard/repo/[id]/page": {
+          "moduleId": "[project]/.next-internal/server/app/dashboard/repo/[id]/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/lib/services/repoService.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/lib/services/gitProviderService.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "createConversation",
+          "filename": "src/lib/services/repoService.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/repo/[id]/page": "action-browser"
+      },
+      "exportedName": "createConversation",
+      "filename": "src/lib/services/repoService.ts"
+    },
+    "40a8bbbeec1a0de06ef2a2f8866ee98ae18289f1cb": {
+      "workers": {
+        "app/dashboard/repo/[id]/page": {
+          "moduleId": "[project]/.next-internal/server/app/dashboard/repo/[id]/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/lib/services/repoService.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/lib/services/gitProviderService.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "fetchGitLabProjects",
+          "filename": "src/lib/services/gitProviderService.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/repo/[id]/page": "rsc"
+      },
+      "exportedName": "fetchGitLabProjects",
+      "filename": "src/lib/services/gitProviderService.ts"
+    },
+    "60e5df10ac72562d0398b50d8fc4ded4069463f0b0": {
+      "workers": {
+        "app/dashboard/repo/[id]/page": {
+          "moduleId": "[project]/.next-internal/server/app/dashboard/repo/[id]/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/lib/services/repoService.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/lib/services/gitProviderService.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "importGitLabProjects",
+          "filename": "src/lib/services/gitProviderService.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/repo/[id]/page": "rsc"
+      },
+      "exportedName": "importGitLabProjects",
+      "filename": "src/lib/services/gitProviderService.ts"
+    },
+    "705ec2c797cc2f2d776a9d580e778e82f4dec3dc20": {
+      "workers": {
+        "app/dashboard/repo/[id]/page": {
+          "moduleId": "[project]/.next-internal/server/app/dashboard/repo/[id]/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/lib/services/repoService.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/lib/services/gitProviderService.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "verifyGithubRepoAccess",
+          "filename": "src/lib/services/gitProviderService.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/repo/[id]/page": "rsc"
+      },
+      "exportedName": "verifyGithubRepoAccess",
+      "filename": "src/lib/services/gitProviderService.ts"
+    },
+    "70aaf5995489f70c81a689a0268bd5f4d0fec2690e": {
+      "workers": {
+        "app/dashboard/repo/[id]/page": {
+          "moduleId": "[project]/.next-internal/server/app/dashboard/repo/[id]/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/lib/services/repoService.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/lib/services/gitProviderService.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "verifyGitLabRepoAccess",
+          "filename": "src/lib/services/gitProviderService.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/repo/[id]/page": "rsc"
+      },
+      "exportedName": "verifyGitLabRepoAccess",
+      "filename": "src/lib/services/gitProviderService.ts"
+    }
+  },
+  "edge": {}
+}

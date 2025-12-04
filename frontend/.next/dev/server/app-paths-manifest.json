@@ -1,0 +1,9 @@
+{
+  "/api/chat/route": "app/api/chat/route.js",
+  "/dashboard/new/[id]/page": "app/dashboard/new/[id]/page.js",
+  "/dashboard/new/page": "app/dashboard/new/page.js",
+  "/dashboard/org/[id]/page": "app/dashboard/org/[id]/page.js",
+  "/dashboard/organizations/page": "app/dashboard/organizations/page.js",
+  "/dashboard/repo/[id]/page": "app/dashboard/repo/[id]/page.js",
+  "/dashboard/repo/[id]/settings/page": "app/dashboard/repo/[id]/settings/page.js"
+}

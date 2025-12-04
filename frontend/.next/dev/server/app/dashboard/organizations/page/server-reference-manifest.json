@@ -1,0 +1,170 @@
+{
+  "node": {
+    "7086746f18569372ffa3cfdffc9aa12e4d2f9a0dec": {
+      "workers": {
+        "app/dashboard/organizations/page": {
+          "moduleId": "[project]/.next-internal/server/app/dashboard/organizations/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/lib/services/repoService.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/lib/services/orgService.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "getConversations",
+          "filename": "src/lib/services/repoService.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/organizations/page": "action-browser"
+      },
+      "exportedName": "getConversations",
+      "filename": "src/lib/services/repoService.ts"
+    },
+    "00cf799b7e33e195f9c981a2d6415affaee12298e5": {
+      "workers": {
+        "app/dashboard/organizations/page": {
+          "moduleId": "[project]/.next-internal/server/app/dashboard/organizations/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/lib/services/repoService.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/lib/services/orgService.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "getOrgs",
+          "filename": "src/lib/services/orgService.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/organizations/page": "action-browser"
+      },
+      "exportedName": "getOrgs",
+      "filename": "src/lib/services/orgService.ts"
+    },
+    "4025d49eda10549d289fc3c9e48b2e79be499fe7c3": {
+      "workers": {
+        "app/dashboard/organizations/page": {
+          "moduleId": "[project]/.next-internal/server/app/dashboard/organizations/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/lib/services/repoService.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/lib/services/orgService.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "leaveOrganization",
+          "filename": "src/lib/services/orgService.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/organizations/page": "rsc"
+      },
+      "exportedName": "leaveOrganization",
+      "filename": "src/lib/services/orgService.ts"
+    },
+    "40719b7c30dca7e23375ec36f8f3b3293d26eab284": {
+      "workers": {
+        "app/dashboard/organizations/page": {
+          "moduleId": "[project]/.next-internal/server/app/dashboard/organizations/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/lib/services/repoService.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/lib/services/orgService.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "getOrgMembers",
+          "filename": "src/lib/services/orgService.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/organizations/page": "action-browser"
+      },
+      "exportedName": "getOrgMembers",
+      "filename": "src/lib/services/orgService.ts"
+    },
+    "4089b6bcd743de107f06788e9db127449539652543": {
+      "workers": {
+        "app/dashboard/organizations/page": {
+          "moduleId": "[project]/.next-internal/server/app/dashboard/organizations/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/lib/services/repoService.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/lib/services/orgService.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "acceptInvite",
+          "filename": "src/lib/services/orgService.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/organizations/page": "rsc"
+      },
+      "exportedName": "acceptInvite",
+      "filename": "src/lib/services/orgService.ts"
+    },
+    "40adf607652bcf9f8bd9b5adc84b32fe5fa2f9e66d": {
+      "workers": {
+        "app/dashboard/organizations/page": {
+          "moduleId": "[project]/.next-internal/server/app/dashboard/organizations/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/lib/services/repoService.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/lib/services/orgService.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "createInviteLink",
+          "filename": "src/lib/services/orgService.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/organizations/page": "rsc"
+      },
+      "exportedName": "createInviteLink",
+      "filename": "src/lib/services/orgService.ts"
+    },
+    "40daa9c9a31e4b9e3f17ba924ae68919c41650a3af": {
+      "workers": {
+        "app/dashboard/organizations/page": {
+          "moduleId": "[project]/.next-internal/server/app/dashboard/organizations/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/lib/services/repoService.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/lib/services/orgService.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "createOrg",
+          "filename": "src/lib/services/orgService.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/organizations/page": "rsc"
+      },
+      "exportedName": "createOrg",
+      "filename": "src/lib/services/orgService.ts"
+    },
+    "40fff36bbf491c3923e9f4e9bdecd9f8626f782920": {
+      "workers": {
+        "app/dashboard/organizations/page": {
+          "moduleId": "[project]/.next-internal/server/app/dashboard/organizations/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/lib/services/repoService.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/lib/services/orgService.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "getOrgById",
+          "filename": "src/lib/services/orgService.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/organizations/page": "rsc"
+      },
+      "exportedName": "getOrgById",
+      "filename": "src/lib/services/orgService.ts"
+    },
+    "6018943c8b2808bc23660030a1e0d61a4809b3fe4a": {
+      "workers": {
+        "app/dashboard/organizations/page": {
+          "moduleId": "[project]/.next-internal/server/app/dashboard/organizations/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/lib/services/repoService.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/lib/services/orgService.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "removeMemberFromOrg",
+          "filename": "src/lib/services/orgService.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/organizations/page": "rsc"
+      },
+      "exportedName": "removeMemberFromOrg",
+      "filename": "src/lib/services/orgService.ts"
+    },
+    "7099ea3828eb11e4401363e029e0150399ff6c6705": {
+      "workers": {
+        "app/dashboard/organizations/page": {
+          "moduleId": "[project]/.next-internal/server/app/dashboard/organizations/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/lib/services/repoService.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/lib/services/orgService.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "updateMemberRole",
+          "filename": "src/lib/services/orgService.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/organizations/page": "rsc"
+      },
+      "exportedName": "updateMemberRole",
+      "filename": "src/lib/services/orgService.ts"
+    },
+    "40cc2b5ffdb2eb3caf9ee90ff3a94c10d7c942cdb1": {
+      "workers": {
+        "app/dashboard/organizations/page": {
+          "moduleId": "[project]/.next-internal/server/app/dashboard/organizations/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/lib/services/repoService.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/lib/services/orgService.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "getReposByOrganizationId",
+          "filename": "src/lib/services/repoService.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/organizations/page": "action-browser"
+      },
+      "exportedName": "getReposByOrganizationId",
+      "filename": "src/lib/services/repoService.ts"
+    }
+  },
+  "edge": {}
+}

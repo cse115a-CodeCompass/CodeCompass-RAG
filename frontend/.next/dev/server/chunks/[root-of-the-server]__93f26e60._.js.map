@@ -1,0 +1,6 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 196, "column": 0}, "map": {"version":3,"sources":["file:///home/mann/codecompass/src/app/api/videos/route.ts"],"sourcesContent":["import { list } from \"@vercel/blob\";\nimport { NextResponse } from \"next/server\";\n\nexport async function GET() {\n  try {\n    const { blobs } = await list({\n      prefix: \"demos/\", // Filter to only video files in the videos folder\n      limit: 10, // Limit to 10 videos\n    });\n\n    // Filter for video files only (mp4, webm, etc.)\n    const videos = blobs.filter((blob) =>\n      /\\.(mp4|webm|mov|avi)$/i.test(blob.pathname),\n    );\n\n    return NextResponse.json({ videos });\n  } catch (error) {\n    console.error(\"Error listing videos from Vercel Blob:\", error);\n    return NextResponse.json(\n      { error: \"Failed to fetch videos\" },\n      { status: 500 },\n    );\n  }\n}\n"],"names":[],"mappings":";;;;AAAA;AACA;;;AAEO,eAAe;IACpB,IAAI;QACF,MAAM,EAAE,KAAK,EAAE,GAAG,MAAM,IAAA,2KAAI,EAAC;YAC3B,QAAQ;YACR,OAAO;QACT;QAEA,gDAAgD;QAChD,MAAM,SAAS,MAAM,MAAM,CAAC,CAAC,OAC3B,yBAAyB,IAAI,CAAC,KAAK,QAAQ;QAG7C,OAAO,gJAAY,CAAC,IAAI,CAAC;YAAE;QAAO;IACpC,EAAE,OAAO,OAAO;QACd,QAAQ,KAAK,CAAC,0CAA0C;QACxD,OAAO,gJAAY,CAAC,IAAI,CACtB;YAAE,OAAO;QAAyB,GAClC;YAAE,QAAQ;QAAI;IAElB;AACF"}}]
+}

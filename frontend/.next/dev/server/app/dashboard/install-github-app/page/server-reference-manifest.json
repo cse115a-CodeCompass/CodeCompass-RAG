@@ -1,0 +1,20 @@
+{
+  "node": {
+    "7086746f18569372ffa3cfdffc9aa12e4d2f9a0dec": {
+      "workers": {
+        "app/dashboard/install-github-app/page": {
+          "moduleId": "[project]/.next-internal/server/app/dashboard/install-github-app/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/lib/services/repoService.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false,
+          "exportedName": "getConversations",
+          "filename": "src/lib/services/repoService.ts"
+        }
+      },
+      "layer": {
+        "app/dashboard/install-github-app/page": "action-browser"
+      },
+      "exportedName": "getConversations",
+      "filename": "src/lib/services/repoService.ts"
+    }
+  },
+  "edge": {}
+}

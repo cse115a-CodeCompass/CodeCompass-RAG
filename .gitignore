@@ -1,14 +1,10 @@
-__pycache__
-.env
-CLAUDE.md
-codecompass-app.2025-11-19.private-key.pem
-cloned_repos/
-# Python
+# --- Python ---
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
+
 build/
 develop-eggs/
 dist/
@@ -26,7 +22,7 @@ wheels/
 *.egg
 MANIFEST
 
-# Virtual Environments
+# --- Virtual Environments ---
 .venv/
 venv/
 env/
@@ -34,7 +30,7 @@ ENV/
 env.bak/
 venv.bak/
 
-# IDE / Editors
+# --- IDE / Editors ---
 .vscode/
 .idea/
 *.swp
@@ -43,16 +39,19 @@ venv.bak/
 .DS_Store
 .claude/
 
-# Environment Variables
+# --- Environment / Secrets ---
 .env
 .env.local
 .env.*.local
+codecompass-app.*.private-key.pem
 
-# Generated Outputs
+# --- Application / Generated Outputs ---
+cloned_repos/
 chroma_db/
 document_chroma_db/
 code_chroma_db/
 kg_store/
+
 responses.md
 responses_archive.md
 chunks.txt
@@ -60,12 +59,11 @@ graph.txt
 ex.txt
 nul
 
-
-# Test/Example Data (keep examples/ as it contains demo files)
+# --- Project Data / Examples ---
 pacai/
 practice/
 
-# Legacy/Experimental Files (not used in current pipeline)
+# --- Legacy / Experimental Files ---
 code_chunking.py
 code_chunking2.py
 code_chunking3.py
@@ -76,7 +74,7 @@ graphrag_expand.py
 graphrag_retrieve.py
 treesitter_engine.py
 
-# Test Scripts (keep if actively testing, otherwise ignore)
+# --- Test Scripts ---
 tree_sitter_test.py
 tree_sitter_test2.py
 inspect_test.py
@@ -87,19 +85,18 @@ test_find_classes.py
 test_line_numbers.py
 inspect_stored_class.py
 
-# Scratch/Notes
+# --- Scratch / Notes ---
 SCRATCHPAD.md
 README_BACKUP.md
 
-# Pytest
+# --- Pytest ---
 .pytest_cache/
 .coverage
 htmlcov/
 
-# Jupyter
+# --- Jupyter ---
 .ipynb_checkpoints/
 *.ipynb
 
-# Logs
+# --- Logs ---
 *.log
-

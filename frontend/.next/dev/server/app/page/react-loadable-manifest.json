@@ -1,0 +1,16 @@
+{
+  "[project]/src/components/landing/comparison.tsx [app-client] (ecmascript, next/dynamic entry)": {
+    "id": "[project]/src/components/landing/comparison.tsx [app-client] (ecmascript, next/dynamic entry)",
+    "files": [
+      "static/chunks/src_components_landing_comparison_tsx_a6bbecd6._.js",
+      "static/chunks/src_components_landing_comparison_tsx_9c50a472._.js"
+    ]
+  },
+  "[project]/src/components/landing/features.tsx [app-client] (ecmascript, next/dynamic entry)": {
+    "id": "[project]/src/components/landing/features.tsx [app-client] (ecmascript, next/dynamic entry)",
+    "files": [
+      "static/chunks/src_components_landing_features_tsx_ad062683._.js",
+      "static/chunks/src_components_landing_features_tsx_9c50a472._.js"
+    ]
+  }
+}
