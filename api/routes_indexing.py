@@ -198,7 +198,7 @@ async def index_repo(request: Request):
         )
 
         # Count nodes for statistics
-        from Indexing_Pipeline.core.graph_model import NodeLabel
+        from indexing_pipelines.code_pipeline.core.graph_model import NodeLabel
 
         graph_stats = {
             "folders": len(
