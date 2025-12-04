@@ -114,7 +114,7 @@ async def index_repo(request: Request):
         # ====================================================================
         # STEP 1: Clone Repository
         # ====================================================================
-
+        print("STARTING CLONE REPO")
         try:
             # Clone the repository using installation_id for auth (shallow clone with depth=1)
             auth_url = f"https://x-access-token:{token}@github.com/{owner}/{repo}.git"
@@ -158,12 +158,17 @@ async def index_repo(request: Request):
         # STEP 1.5: Actual Indexing of Codebase
         # ====================================================================
         
+        print("STARTING ACTUAL INDEXING")
+
         Indexer_obj = Indexing_Pipeline_Head(temp_dir, user_id, repo_id)
         Indexer_obj.dispatch_files()
+
+        print("INDEXING COMPLETE")
 
         # ====================================================================
         # STEP 2-5: Run Documentation Pipeline
         # ====================================================================
+        print("RUNNING DOCUMENTATION PIPELINE")
 
         # Initialize LLM provider
         if not os.getenv("OPENAI_API_KEY") and DEFAULT_PROVIDER == "openai":

@@ -7,7 +7,7 @@ import os
 import chromadb
 from chromadb.config import Settings
 
-from config import CODE_CHROMA_DB_PATH
+from config import CODE_CHROMA_DB_PATH, DOCUMENTATION_CHROMA_DB_PATH
 
 class Chroma_Manager():
     def __init__(self):
@@ -24,6 +24,9 @@ class Chroma_Manager():
         # This will either:
         # - Load existing DB if it exists at db_path
         # - Create new DB if it doesn't exist
+        client = chromadb.PersistentClient(path=db_path)
+
+        db_path = DOCUMENTATION_CHROMA_DB_PATH
         client = chromadb.PersistentClient(path=db_path)
 
         return

@@ -54,7 +54,7 @@ async def generate_page_markdown(
     # For overview pages with no nodes, build summary from wiki pages
     wiki_pages_summary = ""
     if page.kind.value == "overview" and len(page.node_ids) == 0 and wiki_ia:
-        from Indexing_Pipeline.docs.ia.content_prompts import build_overview_prompt
+        from indexing_pipelines.code_pipeline.docs.ia.content_prompts import build_overview_prompt
 
         # Build summary of all top-level pages
         lines = []

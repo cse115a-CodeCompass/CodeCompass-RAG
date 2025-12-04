@@ -82,8 +82,15 @@ if __name__ == "__main__":
     #query = "explain how indexing works"
     #
     #agent_obj = RAG_Agent("Mann","Repo-Test5")
-    #print(agent_obj.run(query, [], 'DeepSeek-r1:14b')["message"]["content"])
-    
+    #
+#
+#
+    #stream, chunks_list, chunks_file_paths = agent_obj.run(query, [], 'DeepSeek-r1:14b')
+    #
+    #print("#####################################")
+    #print(stream["message"]["content"])
+    #print(chunks_list, chunks_file_paths)
+
     #tool = agent_obj.select_tool(query)
     #tool = "code_rag"
     #context = agent_obj.dispatch_to_tool(tool, query)

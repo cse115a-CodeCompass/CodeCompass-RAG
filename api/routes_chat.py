@@ -207,21 +207,21 @@ async def handle_rag_request_stream(request: Request):
 
             # Run RAG pipeline and get streaming response
             print(f"[/chat/stream] Running RAG pipeline with model={selected_model}")
-            stream, chunks_list, chunks_file_paths = agent_obj.run(user_query, chat_history, selected_model)
+            stream, chunks_list, chunks_file_paths = agent_obj.run(user_query, chat_history, selected_model)#
 
-
+            #print(stream["message"]["content"])
+            print(chunks_list, chunks_file_paths)
 
             # Combine the lists into a list of snippet-like objects/tuples
             snippets_data = zip(chunks_file_paths, chunks_list)
             
             for file_path, chunk_content in snippets_data:
                 yield f"data: {json.dumps({"type": "snippet", "file": file_path, "code": chunk_content})}\n\n"
-                
-            # Stream tokens back to client
+               
+            #Stream tokens back to client
             for chunk in stream:
                 if "message" in chunk and "content" in chunk["message"]:
                     content = chunk["message"]["content"]
-                    print(content)
                     yield f"data: {json.dumps({'content': content})}\n\n"
 
             yield "data: [DONE]\n\n"
